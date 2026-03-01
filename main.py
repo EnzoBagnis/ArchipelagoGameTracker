@@ -360,18 +360,31 @@ class ArchipelagoTracker(tk.Tk):
 
         tk.Frame(self, bg=BORDER, height=1).pack(fill="x")
 
-        body = tk.Frame(self, bg=BG)
-        body.pack(fill="both", expand=True)
+        # ── Paned layout (left panel resizable & hideable) ───────────────────
+        self._paned = tk.PanedWindow(self, orient="horizontal",
+                                     bg=BG, sashwidth=5,
+                                     sashrelief="flat", sashpad=0,
+                                     handlesize=0)
+        self._paned.pack(fill="both", expand=True)
 
         # ── Left: Changes Panel ──────────────────────────────────────────────
-        left = tk.Frame(body, bg=BG2, width=340)
-        left.pack(side="left", fill="y")
+        left = tk.Frame(self._paned, bg=BG2, width=300)
         left.pack_propagate(False)
+        self._left_panel = left
+        self._paned.add(left, minsize=0, width=300)
 
         lhdr = tk.Frame(left, bg=BG2, pady=10, padx=14)
         lhdr.pack(fill="x")
-        tk.Label(lhdr, text="DERNIERS CHANGEMENTS", bg=BG2,
-                 fg=ACCENT2, font=("Courier New", 9, "bold")).pack(anchor="w")
+        lhdr_top = tk.Frame(lhdr, bg=BG2)
+        lhdr_top.pack(fill="x")
+        tk.Label(lhdr_top, text="DERNIERS CHANGEMENTS", bg=BG2,
+                 fg=ACCENT2, font=("Courier New", 9, "bold")).pack(side="left", anchor="w")
+        self._toggle_left_btn = tk.Button(
+            lhdr_top, text="◀", bg=BG2, fg=TEXT_DIM,
+            font=("Courier New", 8), relief="flat", cursor="hand2",
+            padx=4, pady=0, activebackground=BG3, activeforeground=TEXT,
+            command=self._toggle_left_panel)
+        self._toggle_left_btn.pack(side="right")
         self._last_check_lbl = tk.Label(lhdr, text="Jamais vérifié",
                                         bg=BG2, fg=TEXT_DIM,
                                         font=("Courier New", 8))
@@ -398,14 +411,28 @@ class ArchipelagoTracker(tk.Tk):
         self._changes_inner.bind_all("<MouseWheel>", self._on_mousewheel_changes)
 
         # ── Right: Games List ────────────────────────────────────────────────
-        right = tk.Frame(body, bg=BG)
-        right.pack(side="left", fill="both", expand=True)
+        right = tk.Frame(self._paned, bg=BG)
+        self._right_panel = right
+        self._paned.add(right, minsize=400)
 
-        fbar = tk.Frame(right, bg=BG3, pady=10, padx=14)
+        fbar = tk.Frame(right, bg=BG3, pady=6, padx=14)
         fbar.pack(fill="x")
 
+        # Row 1 — tabs + search + show-panel button
+        fbar_r1 = tk.Frame(fbar, bg=BG3)
+        fbar_r1.pack(fill="x")
+
+        # Button to show left panel when it's hidden
+        self._show_left_btn = tk.Button(
+            fbar_r1, text="▶ Changements", bg=BG3, fg=TEXT_DIM,
+            font=("Courier New", 8), relief="flat", cursor="hand2",
+            padx=6, pady=2, activebackground=BG2, activeforeground=TEXT,
+            command=self._toggle_left_panel)
+        self._show_left_btn.pack(side="left", padx=(0, 8))
+        self._show_left_btn.pack_forget()   # hidden by default (panel visible)
+
         for tab in TABS.keys():
-            rb = tk.Radiobutton(fbar, text=tab, variable=self._tab_var,
+            rb = tk.Radiobutton(fbar_r1, text=tab, variable=self._tab_var,
                                 value=tab, command=self._on_tab_change,
                                 bg=BG3, fg=TEXT, selectcolor=BG3,
                                 activebackground=BG3, activeforeground=ACCENT2,
@@ -414,55 +441,69 @@ class ArchipelagoTracker(tk.Tk):
                                 padx=10, pady=4, cursor="hand2")
             rb.pack(side="left", padx=(0, 4))
 
-        tk.Label(fbar, text="🔍", bg=BG3, fg=TEXT_DIM,
+        tk.Label(fbar_r1, text="🔍", bg=BG3, fg=TEXT_DIM,
                  font=("Courier New", 11)).pack(side="left", padx=(16, 4))
-        search_entry = tk.Entry(fbar, textvariable=self._filter_var,
+        search_entry = tk.Entry(fbar_r1, textvariable=self._filter_var,
                                 bg=BG, fg=TEXT, insertbackground=TEXT,
-                                relief="flat", font=("Courier New", 10), width=20)
+                                relief="flat", font=("Courier New", 10), width=22)
         search_entry.pack(side="left", ipady=4)
         self._filter_var.trace_add("write", lambda *a: self._refresh_table())
 
-        tk.Label(fbar, text="  Statut:", bg=BG3, fg=TEXT_DIM,
-                 font=("Courier New", 9)).pack(side="left", padx=(12, 4))
+        self._count_lbl = tk.Label(fbar_r1, text="", bg=BG3, fg=TEXT_DIM,
+                                   font=("Courier New", 9))
+        self._count_lbl.pack(side="right", padx=8)
+
+        # Row 2 — filter dropdowns
+        fbar_r2 = tk.Frame(fbar, bg=BG3)
+        fbar_r2.pack(fill="x", pady=(4, 0))
+
+        tk.Label(fbar_r2, text="Statut:", bg=BG3, fg=TEXT_DIM,
+                 font=("Courier New", 9)).pack(side="left", padx=(0, 4))
         statuses = ["All"] + list(STATUS_COLORS.keys()) + ["Other"]
-        ttk.Combobox(fbar, textvariable=self._status_filter, values=statuses,
+        ttk.Combobox(fbar_r2, textvariable=self._status_filter, values=statuses,
                      state="readonly", width=13,
                      font=("Courier New", 9)).pack(side="left")
         self._status_filter.trace_add("write", lambda *a: self._refresh_table())
 
-        tk.Label(fbar, text="  PopTracker:", bg=BG3, fg=TEXT_DIM,
+        tk.Label(fbar_r2, text="  PopTracker:", bg=BG3, fg=TEXT_DIM,
                  font=("Courier New", 9)).pack(side="left", padx=(12, 4))
-        ttk.Combobox(fbar, textvariable=self._pt_filter,
+        ttk.Combobox(fbar_r2, textvariable=self._pt_filter,
                      values=["All", " Disponible", " Non disponible"],
                      state="readonly", width=16,
                      font=("Courier New", 9)).pack(side="left")
         self._pt_filter.trace_add("write", lambda *a: self._refresh_table())
 
-        tk.Label(fbar, text="  Owned:", bg=BG3, fg=TEXT_DIM,
+        tk.Label(fbar_r2, text="  Owned:", bg=BG3, fg=TEXT_DIM,
                  font=("Courier New", 9)).pack(side="left", padx=(12, 4))
-        ttk.Combobox(fbar, textvariable=self._owned_filter,
+        ttk.Combobox(fbar_r2, textvariable=self._owned_filter,
                      values=["All", " YES", " NO"],
                      state="readonly", width=8,
                      font=("Courier New", 9)).pack(side="left")
         self._owned_filter.trace_add("write", lambda *a: self._refresh_table())
 
-        self._count_lbl = tk.Label(fbar, text="", bg=BG3, fg=TEXT_DIM,
-                                   font=("Courier New", 9))
-        self._count_lbl.pack(side="right", padx=8)
 
         # Table
-        table_frame = tk.Frame(right, bg=BG)
+        table_frame = tk.Frame(right, bg=BORDER, pady=0, padx=0)
         table_frame.pack(fill="both", expand=True)
+
+        # Bordure supérieure du tableau
+        tk.Frame(table_frame, bg=BORDER, height=1).pack(fill="x", side="top")
+
+        inner_table = tk.Frame(table_frame, bg=BG)
+        inner_table.pack(fill="both", expand=True)
 
         style = ttk.Style()
         style.theme_use("clam")
         style.configure("Custom.Treeview",
                          background=BG, foreground=TEXT,
-                         rowheight=28, fieldbackground=BG,
-                         borderwidth=0, font=("Courier New", 9))
+                         rowheight=31, fieldbackground=BG,
+                         borderwidth=0, font=("Courier New", 9),
+                         relief="flat",
+                         separatorcolor=BORDER)
         style.configure("Custom.Treeview.Heading",
                          background=BG3, foreground=ACCENT2,
-                         font=("Courier New", 9, "bold"), relief="flat")
+                         font=("Courier New", 9, "bold"), relief="flat",
+                         borderwidth=0, padding=(6, 6))
         style.map("Custom.Treeview",
                   background=[("selected", ACCENT)],
                   foreground=[("selected", "white")])
@@ -471,7 +512,7 @@ class ArchipelagoTracker(tk.Tk):
                   foreground=[("active", "white")])
 
         cols = ("game", "status", "poptracker", "notes", "owned")
-        self._tree = ttk.Treeview(table_frame, columns=cols,
+        self._tree = ttk.Treeview(inner_table, columns=cols,
                                    show="headings", style="Custom.Treeview")
 
         self._tree.heading("game",       text="Jeu" + SORT_ICONS[None],
@@ -488,17 +529,18 @@ class ArchipelagoTracker(tk.Tk):
                            anchor="w",
                            command=lambda: self._on_sort_click("owned"))
 
-        self._tree.column("game",       width=220, minwidth=130)
-        self._tree.column("status",     width=120, minwidth=90)
-        self._tree.column("poptracker", width=100, minwidth=80)
-        self._tree.column("notes",      width=430, minwidth=160)
-        self._tree.column("owned",      width=70,  minwidth=60)
+        self._tree.column("game",       width=220, minwidth=130, stretch=False)
+        self._tree.column("status",     width=120, minwidth=90,  stretch=False)
+        self._tree.column("poptracker", width=100, minwidth=80,  stretch=False)
+        self._tree.column("notes",      width=430, minwidth=160, stretch=True)
+        self._tree.column("owned",      width=70,  minwidth=60,  stretch=False)
 
-        vsb = ttk.Scrollbar(table_frame, orient="vertical",
+        vsb = ttk.Scrollbar(inner_table, orient="vertical",
                              command=self._tree.yview)
         self._tree.configure(yscrollcommand=vsb.set)
         self._tree.pack(side="left", fill="both", expand=True)
         vsb.pack(side="right", fill="y")
+
 
         for status, color in STATUS_COLORS.items():
             self._tree.tag_configure(status, foreground=color)
@@ -506,15 +548,17 @@ class ArchipelagoTracker(tk.Tk):
         self._tree.tag_configure("new",      background="#1a2e1a")
         self._tree.tag_configure("core_yes", foreground=GREEN)
         self._tree.tag_configure("core_no",  foreground=RED)
+        # Zebra striping — lignes alternées
+        self._tree.tag_configure("odd_row",  background="#0d1117")
+        self._tree.tag_configure("even_row", background="#161b22")
 
         self._tree.bind("<<TreeviewSelect>>", self._on_row_select)
 
         # ── Detail Panel ─────────────────────────────────────────────────────
         tk.Frame(right, bg=BORDER, height=1).pack(fill="x")
 
-        detail = tk.Frame(right, bg=BG2, height=170)
+        detail = tk.Frame(right, bg=BG2)
         detail.pack(fill="x")
-        detail.pack_propagate(False)
 
         detail_top = tk.Frame(detail, bg=BG2, padx=14, pady=8)
         detail_top.pack(fill="x")
@@ -546,6 +590,8 @@ class ArchipelagoTracker(tk.Tk):
                                       font=("Courier New", 9), anchor="w",
                                       justify="left", wraplength=700, padx=14)
         self._detail_notes.pack(fill="x")
+        detail.bind("<Configure>",
+                    lambda e: self._detail_notes.config(wraplength=max(200, e.width - 28)))
 
         self._links_frame = tk.Frame(detail, bg=BG2, padx=14, pady=4)
         self._links_frame.pack(fill="x")
@@ -558,6 +604,23 @@ class ArchipelagoTracker(tk.Tk):
         self._apply_columns()
         self._refresh_table()
 
+    # ── Toggle Left Panel ─────────────────────────────────────────────────────
+    def _toggle_left_panel(self):
+        panes = self._paned.panes()
+        if str(self._left_panel) in panes:
+            # Hide: remember width and remove from paned
+            self._left_panel_width = self._paned.sash_coord(0)[0]
+            self._paned.forget(self._left_panel)
+            self._toggle_left_btn.config(text="▶")
+            self._show_left_btn.pack(side="left", padx=(0, 8))
+        else:
+            # Show: re-insert before right panel
+            self._paned.add(self._left_panel, minsize=0,
+                            width=getattr(self, "_left_panel_width", 300),
+                            before=self._right_panel)
+            self._toggle_left_btn.config(text="◀")
+            self._show_left_btn.pack_forget()
+
     def _apply_columns(self):
         is_core = self._tab_var.get() == "Core Verified"
         if is_core:
@@ -566,11 +629,15 @@ class ArchipelagoTracker(tk.Tk):
             self._tree.column("game",   width=260, minwidth=140)
             self._tree.column("notes",  width=480, minwidth=180)
         else:
-            self._tree.column("status", width=120, minwidth=90, stretch=True)
+            self._tree.column("status", width=120, minwidth=90, stretch=False)
             self._tree.heading("status", text="Statut" + SORT_ICONS[
                 self._sort_asc if self._sort_col == "status" else None])
             self._tree.column("game",   width=220, minwidth=130)
             self._tree.column("notes",  width=430, minwidth=160)
+
+    # ── Lignes séparatrices de colonnes ───────────────────────────────────────
+    def _draw_column_separators(self, event=None):
+        pass
 
     # ── Sort Logic ────────────────────────────────────────────────────────────
     def _on_sort_click(self, col):
@@ -850,7 +917,7 @@ class ArchipelagoTracker(tk.Tk):
         else:
             filtered.sort(key=lambda x: x[0].lower())
 
-        for name, data, has_pt, is_owned in filtered:
+        for idx, (name, data, has_pt, is_owned) in enumerate(filtered):
             status    = data.get("status", "")
             notes     = data.get("notes",  "")
             pt_txt    = "YES" if has_pt   else "NO"
@@ -861,7 +928,8 @@ class ArchipelagoTracker(tk.Tk):
             else:
                 row_tag = status if status in STATUS_COLORS else "Other"
 
-            tags = [row_tag] + (["new"] if name in new_names else [])
+            stripe = "even_row" if idx % 2 == 0 else "odd_row"
+            tags = [stripe, row_tag] + (["new"] if name in new_names else [])
             self._tree.insert("", "end",
                               values=(name, status, pt_txt, notes, owned_txt),
                               tags=tags)
