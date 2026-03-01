@@ -27,7 +27,7 @@ POPTRACKER_API = (
 )
 
 GITHUB_REPO_RE = re.compile(
-    r'https?://github\.com/([^/\s]+)/([^/\s#?]+?)(?:\.git)?(?:/[^\s]*)?(?:\s|$)'
+    r'https?://(?:www\.)?github\.com/([^/\s]+)/([^/\s#?]+)'
 )
 
 def get_cache_path():
@@ -74,42 +74,37 @@ def fetch_tab(tab_name, gid):
         return []
     return list(csv.reader(io.StringIO(r.content.decode("utf-8"))))
 
-def rows_to_dict(rows):
+def rows_to_dict(rows, tab_name=""):
     if not rows:
         return {}
 
-    # ── Detect column indices from header row ─────────────────────────────
-    header = [c.strip().lower() for c in rows[0]]
-
-    def _col(*keywords):
-        """Return index of first column whose header contains all keywords."""
-        for i, h in enumerate(header):
-            if all(k in h for k in keywords):
-                return i
-        return -1
-
-    idx_name    = 0
-    idx_status  = _col("status") if _col("status") != -1 else 1
-    idx_notes   = _col("notes")  if _col("notes")  != -1 else 2
-    # "Where can you get the APWorld and Client?" — try several heuristics
-    idx_apworld = _col("apworld")
-    if idx_apworld == -1:
-        idx_apworld = _col("where", "get")
-    if idx_apworld == -1:
-        idx_apworld = _col("client")
+    # ── Fixed column layout (confirmed from sheet structure) ──────────────
+    # Playable Worlds : A=Game(0)  B=Status(1)  C=APWorld(2)  D=Notes(3)
+    # Core Verified   : A=Game(0)  B=Notes(1)   (no APWorld column)
+    if tab_name == "Core Verified":
+        idx_name, idx_status, idx_apworld, idx_notes = 0, -1, -1, 1
+    else:
+        idx_name, idx_status, idx_apworld, idx_notes = 0, 1, 2, 3
 
     result = {}
-    for row in rows[1:]:
+    for row in rows:
+        if len(row) <= idx_name:
+            continue
+        name = row[idx_name].strip()
+        if not name or name in SKIP_NAMES or len(name) > 80:
+            continue
+
         def _get(i):
             return row[i].strip() if i != -1 and i < len(row) else ""
 
-        name    = _get(idx_name)
         status  = _get(idx_status)
-        notes   = _get(idx_notes)
         apworld = _get(idx_apworld)
+        notes   = _get(idx_notes)
 
-        if not name or name in SKIP_NAMES:
+        # Skip header/info rows
+        if status.lower() in ("status", "game", "do not sort"):
             continue
+
         result[name] = {"status": status, "notes": notes, "apworld": apworld}
     return result
 
@@ -119,15 +114,17 @@ def extract_urls(text):
     return URL_PATTERN.findall(text)
 
 def extract_github_repo(notes, apworld=""):
-    """Extracts (owner, repo) from GitHub URLs in notes or apworld column."""
+    """Extracts (owner, repo) from GitHub URLs in apworld then notes."""
     for text in (apworld, notes):   # apworld column takes priority
         if not text:
             continue
         for url in extract_urls(text):
-            m = GITHUB_REPO_RE.match(url + " ")
+            m = GITHUB_REPO_RE.search(url)
             if m:
                 owner = m.group(1)
-                repo  = m.group(2).split("/")[0]
+                repo  = m.group(2)
+                if repo.endswith(".git"):
+                    repo = repo[:-4]
                 return owner, repo
     return None
 
@@ -141,7 +138,6 @@ def fetch_github_release(owner, repo):
         }
         r = requests.get(api_url, timeout=10, headers=headers)
         if r.status_code == 404:
-            # No releases page — try tags
             r2 = requests.get(
                 f"https://api.github.com/repos/{owner}/{repo}/tags",
                 timeout=10, headers=headers)
@@ -245,7 +241,6 @@ class ArchipelagoTracker(tk.Tk):
         self._changes        = []
         self._all_games      = {}
         self._poptracker_set = set()
-        # {tab_name: {game_name: {"tag": str, "date": str, "url": str}}}
         self._releases       = {}
         self._filter_var     = tk.StringVar()
         self._tab_var        = tk.StringVar(value="Playable Worlds")
@@ -414,16 +409,10 @@ class ArchipelagoTracker(tk.Tk):
         self._tree.pack(side="left", fill="both", expand=True)
         vsb.pack(side="right", fill="y")
 
-        # Playable Worlds: status-colored rows
         for status, color in STATUS_COLORS.items():
             self._tree.tag_configure(status, foreground=color)
-        self._tree.tag_configure("Other", foreground=TEXT_DIM)
-        self._tree.tag_configure("new",   background="#1a2e1a")
-        # Core Verified: neutral row color, PT cell visually stands out
-        # ttk doesn't support per-cell color; we use a neutral TEXT row so the
-        # hidden status column doesn't bleed color, and rely on the PT text
-        # value (YES/NO) itself for clarity. A post-draw Canvas overlay would
-        # be needed for true per-cell color — not implemented to keep it simple.
+        self._tree.tag_configure("Other",    foreground=TEXT_DIM)
+        self._tree.tag_configure("new",      background="#1a2e1a")
         self._tree.tag_configure("core_yes", foreground=GREEN)
         self._tree.tag_configure("core_no",  foreground=RED)
 
@@ -453,7 +442,6 @@ class ArchipelagoTracker(tk.Tk):
                                    font=("Courier New", 9), anchor="e")
         self._detail_pt.pack(side="right")
 
-        # Release row — shown below the title bar
         detail_rel = tk.Frame(detail, bg=BG2, padx=14, pady=2)
         detail_rel.pack(fill="x")
         tk.Label(detail_rel, text="📦 Release:", bg=BG2, fg=TEXT_DIM,
@@ -551,7 +539,7 @@ class ArchipelagoTracker(tk.Tk):
             total = sum(len(v) for k, v in cache.items()
                         if k not in ("_timestamp", "_poptracker", "_releases"))
             self._set_status(
-                f"Cache chargé — {total} jeux · {len(self._poptracker_set)} avec PopTracker")
+                f"Cache chargé — {total} jeux")
         else:
             self._set_status("Aucun cache — Cliquez sur Vérifier !")
 
@@ -564,13 +552,12 @@ class ArchipelagoTracker(tk.Tk):
         threading.Thread(target=self._do_check, daemon=True).start()
 
     def _do_check(self):
-        cache     = load_cache()
-        new_cache = {"_timestamp": datetime.now().strftime("%Y-%m-%d %H:%M")}
-        changes   = []
+        cache        = load_cache()
+        new_cache    = {"_timestamp": datetime.now().strftime("%Y-%m-%d %H:%M")}
+        changes      = []
         old_releases = cache.get("_releases", {})
         new_releases = {}
 
-        # ── Google Sheets + GitHub releases ───────────────────────────────
         for tab_name, gid in TABS.items():
             self._set_status(f"Récupération: {tab_name}...")
             rows = fetch_tab(tab_name, gid)
@@ -579,12 +566,11 @@ class ArchipelagoTracker(tk.Tk):
                 new_releases[tab_name] = old_releases.get(tab_name, {})
                 continue
 
-            current = rows_to_dict(rows)
+            current = rows_to_dict(rows, tab_name)
             old     = cache.get(tab_name, {})
             if isinstance(old, dict) and "_timestamp" in old:
                 old = {}
 
-            # Sheet changes
             added    = {k: v for k, v in current.items() if k not in old}
             removed  = {k: v for k, v in old.items()     if k not in current}
             modified = {}
@@ -624,7 +610,6 @@ class ArchipelagoTracker(tk.Tk):
                             new_tab_rels[game_name] = old_tab_rels[game_name]
                         continue
                     new_tab_rels[game_name] = release
-                    # Detect any new release published (tag differs from cached)
                     old_tag = old_tab_rels.get(game_name, {}).get("tag", "")
                     new_tag = release.get("tag", "")
                     if new_tag and new_tag != old_tag:
@@ -632,13 +617,11 @@ class ArchipelagoTracker(tk.Tk):
                                 if old_tag else f"Nouvelle release: {new_tag}")
                         changes.append((
                             "🏷️", tab_name, game_name, "",
-                            desc,
-                            release.get("url", ""),
+                            desc, release.get("url", ""),
                         ))
 
             new_releases[tab_name] = new_tab_rels
 
-        # ── PopTracker Wiki ────────────────────────────────────────────────
         self._set_status("Récupération: PopTracker Wiki...")
         pt_set = fetch_poptracker_games()
         if pt_set:
@@ -664,7 +647,7 @@ class ArchipelagoTracker(tk.Tk):
         self._refresh_changes()
         n  = len(self._changes)
         pt = len(self._poptracker_set)
-        self._set_status(f"✓ Check terminé — {n} changement(s)")
+        self._set_status(f"✓ Check terminé — {n} changement(s) · {pt} jeux avec PopTracker")
 
     # ── Refresh Changes Panel ─────────────────────────────────────────────────
     def _refresh_changes(self):
@@ -691,13 +674,13 @@ class ArchipelagoTracker(tk.Tk):
             top_row.pack(fill="x")
             tk.Label(top_row, text=icon, bg=BG2,
                      font=("Segoe UI Emoji", 11)).pack(side="left")
-            tk.Label(top_row, text=f"  {game}", bg=BG2, fg=TEXT,
+            tk.Label(top_row, text="  " + game, bg=BG2, fg=TEXT,
                      font=("Courier New", 9, "bold"),
                      wraplength=280, justify="left").pack(side="left")
             bot_row = tk.Frame(row, bg=BG2)
             bot_row.pack(fill="x")
             color = YELLOW if icon == "🏷️" else STATUS_COLORS.get(status, TEXT_DIM)
-            tk.Label(bot_row, text=f"   {tab} — {desc}",
+            tk.Label(bot_row, text="   " + tab + " — " + desc,
                      bg=BG2, fg=color, font=("Courier New", 8)).pack(side="left")
             if rel_url:
                 lnk = tk.Label(bot_row, text=" ↗", bg=BG2, fg=ACCENT2,
@@ -755,8 +738,6 @@ class ArchipelagoTracker(tk.Tk):
             pt_txt = "YES" if has_pt else "NO"
 
             if is_core:
-                # Color whole row green/red — ttk can't color individual cells
-                # without a Canvas overlay, so we accept the row-level color.
                 row_tag = "core_yes" if has_pt else "core_no"
             else:
                 row_tag = status if status in STATUS_COLORS else "Other"
@@ -782,7 +763,7 @@ class ArchipelagoTracker(tk.Tk):
         self._detail_title.config(text=name, fg=TEXT)
         color = STATUS_COLORS.get(status, TEXT_DIM)
         self._detail_status.config(
-            text=f"● {status}" if status else "", fg=color)
+            text="● " + status if status else "", fg=color)
 
         has_pt = match_poptracker(name, self._poptracker_set)
         if has_pt:
@@ -802,7 +783,7 @@ class ArchipelagoTracker(tk.Tk):
             tag_str  = rel["tag"]
             date_str = rel.get("date", "")
             rel_url  = rel.get("url", "")
-            label    = f"{tag_str}  —  {date_str}" if date_str else tag_str
+            label    = (tag_str + "  —  " + date_str) if date_str else tag_str
             if rel_url:
                 self._detail_release.config(
                     text=label + "  ↗", fg=ACCENT2,
@@ -811,8 +792,7 @@ class ArchipelagoTracker(tk.Tk):
                     lambda e, u=rel_url: webbrowser.open(u))
             else:
                 self._detail_release.config(
-                    text=label, fg=YELLOW,
-                    font=("Courier New", 9), cursor="")
+                    text=label, fg=YELLOW, font=("Courier New", 9), cursor="")
         else:
             self._detail_release.config(
                 text="—", fg=TEXT_DIM, font=("Courier New", 9), cursor="")
@@ -868,7 +848,7 @@ class ArchipelagoTracker(tk.Tk):
             p    = urlparse(url)
             host = p.netloc.replace("www.", "")
             path = p.path[:35] + ("…" if len(p.path) > 35 else "")
-            return f"{host}{path}"
+            return host + path
         except Exception:
             return url[:50] + "…"
 
