@@ -207,6 +207,49 @@ def _normalize(name):
     n = re.sub(r"\s+", " ", n).strip()
     return n
 
+import unicodedata
+
+def _normalize_steam(name):
+    """Aggressive normalization for Steam↔sheet name matching."""
+    name = unicodedata.normalize("NFKD", name)
+    name = name.encode("ascii", "ignore").decode("ascii")
+    name = name.lower()
+    name = re.sub(r"\(.*?\)", "", name)   # remove (subtitle)
+    name = re.sub(r":.*",     "", name)   # remove : subtitle
+    name = re.sub(r"[^a-z0-9 ]", "", name)
+    name = re.sub(r"\s+", " ", name).strip()
+    return name
+
+def fetch_steam_owned(api_key, steam_ids):
+    """Returns set of normalized game names owned across all given Steam IDs."""
+    owned = {}
+    headers = {"User-Agent": "ArchipelagoTracker/1.0"}
+    for sid in steam_ids:
+        sid = sid.strip()
+        if not sid:
+            continue
+        try:
+            r = requests.get(
+                "https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/",
+                params={"key": api_key, "steamid": sid, "include_appinfo": True},
+                timeout=15, headers=headers)
+            if r.status_code != 200:
+                continue
+            for game in r.json().get("response", {}).get("games", []):
+                appid = game["appid"]
+                if appid not in owned:
+                    owned[appid] = game.get("name", "")
+        except Exception:
+            continue
+    return {_normalize_steam(n) for n in owned.values() if n}
+    n = name.lower()
+    for prefix in ["category:", "game:"]:
+        if n.startswith(prefix):
+            n = n[len(prefix):]
+    n = re.sub(r"[:\-_'\"!.,&()]", " ", n)
+    n = re.sub(r"\s+", " ", n).strip()
+    return n
+
 def match_poptracker(game_name, poptracker_set):
     norm = _normalize(game_name)
     if norm in poptracker_set:
@@ -267,6 +310,7 @@ class ArchipelagoTracker(tk.Tk):
         self._all_games      = {}
         self._poptracker_set = set()
         self._releases       = {}
+        self._steam_owned    = set()   # normalized Steam game names
         _s = load_settings()
         self._github_token    = _s.get("github_token", "")
         self._check_releases  = _s.get("check_releases", False)
@@ -274,6 +318,7 @@ class ArchipelagoTracker(tk.Tk):
         self._tab_var        = tk.StringVar(value="Playable Worlds")
         self._status_filter  = tk.StringVar(value="All")
         self._pt_filter      = tk.StringVar(value="All")
+        self._owned_filter   = tk.StringVar(value="All")
         self._checking       = False
 
         self._sort_col = None
@@ -393,6 +438,14 @@ class ArchipelagoTracker(tk.Tk):
                      font=("Courier New", 9)).pack(side="left")
         self._pt_filter.trace_add("write", lambda *a: self._refresh_table())
 
+        tk.Label(fbar, text="  Owned:", bg=BG3, fg=TEXT_DIM,
+                 font=("Courier New", 9)).pack(side="left", padx=(12, 4))
+        ttk.Combobox(fbar, textvariable=self._owned_filter,
+                     values=["All", " YES", " NO"],
+                     state="readonly", width=8,
+                     font=("Courier New", 9)).pack(side="left")
+        self._owned_filter.trace_add("write", lambda *a: self._refresh_table())
+
         self._count_lbl = tk.Label(fbar, text="", bg=BG3, fg=TEXT_DIM,
                                    font=("Courier New", 9))
         self._count_lbl.pack(side="right", padx=8)
@@ -417,7 +470,7 @@ class ArchipelagoTracker(tk.Tk):
                   background=[("active", ACCENT)],
                   foreground=[("active", "white")])
 
-        cols = ("game", "status", "poptracker", "notes")
+        cols = ("game", "status", "poptracker", "notes", "owned")
         self._tree = ttk.Treeview(table_frame, columns=cols,
                                    show="headings", style="Custom.Treeview")
 
@@ -431,11 +484,15 @@ class ArchipelagoTracker(tk.Tk):
                            anchor="w",
                            command=lambda: self._on_sort_click("poptracker"))
         self._tree.heading("notes",      text="Notes", anchor="w")
+        self._tree.heading("owned",      text="Owned" + SORT_ICONS[None],
+                           anchor="w",
+                           command=lambda: self._on_sort_click("owned"))
 
-        self._tree.column("game",       width=240, minwidth=140)
+        self._tree.column("game",       width=220, minwidth=130)
         self._tree.column("status",     width=120, minwidth=90)
         self._tree.column("poptracker", width=100, minwidth=80)
-        self._tree.column("notes",      width=480, minwidth=180)
+        self._tree.column("notes",      width=430, minwidth=160)
+        self._tree.column("owned",      width=70,  minwidth=60)
 
         vsb = ttk.Scrollbar(table_frame, orient="vertical",
                              command=self._tree.yview)
@@ -506,14 +563,14 @@ class ArchipelagoTracker(tk.Tk):
         if is_core:
             self._tree.column("status", width=0, minwidth=0, stretch=False)
             self._tree.heading("status", text="")
-            self._tree.column("game",   width=280, minwidth=140)
-            self._tree.column("notes",  width=530, minwidth=180)
+            self._tree.column("game",   width=260, minwidth=140)
+            self._tree.column("notes",  width=480, minwidth=180)
         else:
             self._tree.column("status", width=120, minwidth=90, stretch=True)
             self._tree.heading("status", text="Statut" + SORT_ICONS[
                 self._sort_asc if self._sort_col == "status" else None])
-            self._tree.column("game",   width=240, minwidth=140)
-            self._tree.column("notes",  width=480, minwidth=180)
+            self._tree.column("game",   width=220, minwidth=130)
+            self._tree.column("notes",  width=430, minwidth=160)
 
     # ── Sort Logic ────────────────────────────────────────────────────────────
     def _on_sort_click(self, col):
@@ -536,7 +593,7 @@ class ArchipelagoTracker(tk.Tk):
 
     def _update_heading_icons(self):
         is_core = self._tab_var.get() == "Core Verified"
-        cols_labels = {"game": "Jeu", "poptracker": "PopTracker"}
+        cols_labels = {"game": "Jeu", "poptracker": "PopTracker", "owned": "Owned"}
         if not is_core:
             cols_labels["status"] = "Statut"
         for col, label in cols_labels.items():
@@ -544,7 +601,7 @@ class ArchipelagoTracker(tk.Tk):
             self._tree.heading(col, text=label + icon)
 
     def _sort_key(self, item):
-        name, data, has_pt = item
+        name, data, has_pt, is_owned = item
         col = self._sort_col
         if col == "game":
             return name.lower()
@@ -552,6 +609,8 @@ class ArchipelagoTracker(tk.Tk):
             return (STATUS_ORDER.get(data.get("status", ""), 99), name.lower())
         elif col == "poptracker":
             return (0 if has_pt else 1, name.lower())
+        elif col == "owned":
+            return (0 if is_owned else 1, name.lower())
         return name.lower()
 
     # ── Mouse wheel ───────────────────────────────────────────────────────────
@@ -566,6 +625,7 @@ class ArchipelagoTracker(tk.Tk):
             self._all_games      = cache
             self._poptracker_set = set(cache.get("_poptracker", []))
             self._releases       = cache.get("_releases", {})
+            self._steam_owned    = set(cache.get("_steam_owned", []))
             self._refresh_table()
             ts = cache.get("_timestamp", "")
             if ts:
@@ -676,6 +736,10 @@ class ArchipelagoTracker(tk.Tk):
             self._poptracker_set = set(cache.get("_poptracker", []))
             new_cache["_poptracker"] = list(self._poptracker_set)
 
+        # Steam owned — not fetched here, use cached value (refresh via ⚙)
+        self._steam_owned = set(cache.get("_steam_owned", []))
+        new_cache["_steam_owned"] = list(self._steam_owned)
+
         new_cache["_releases"] = new_releases
         self._releases         = new_releases
         save_cache(new_cache)
@@ -749,19 +813,21 @@ class ArchipelagoTracker(tk.Tk):
         if not isinstance(games, dict):
             return
 
-        query     = self._filter_var.get().lower()
-        sf        = self._status_filter.get()
-        pt_filt   = self._pt_filter.get()
-        new_names = {e[2] for e in self._changes if e[0] == "➕" and e[1] == tab}
-        is_core   = tab == "Core Verified"
+        query       = self._filter_var.get().lower()
+        sf          = self._status_filter.get()
+        pt_filt     = self._pt_filter.get()
+        owned_filt  = self._owned_filter.get()
+        new_names   = {e[2] for e in self._changes if e[0] == "➕" and e[1] == tab}
+        is_core     = tab == "Core Verified"
 
         filtered = []
         for name, data in games.items():
             if not isinstance(data, dict):
                 continue
-            status = data.get("status", "")
-            notes  = data.get("notes",  "")
-            has_pt = match_poptracker(name, self._poptracker_set)
+            status   = data.get("status", "")
+            notes    = data.get("notes",  "")
+            has_pt   = match_poptracker(name, self._poptracker_set)
+            is_owned = _normalize_steam(name) in self._steam_owned
 
             if query and query not in name.lower() \
                      and query not in status.lower() \
@@ -772,20 +838,23 @@ class ArchipelagoTracker(tk.Tk):
                     if status in STATUS_COLORS: continue
                 elif status != sf:
                     continue
-            if pt_filt == " Disponible"    and not has_pt: continue
-            if pt_filt == " Non disponible" and has_pt:    continue
+            if pt_filt == " Disponible"    and not has_pt:   continue
+            if pt_filt == " Non disponible" and has_pt:      continue
+            if owned_filt == " YES"         and not is_owned: continue
+            if owned_filt == " NO"          and is_owned:     continue
 
-            filtered.append((name, data, has_pt))
+            filtered.append((name, data, has_pt, is_owned))
 
         if self._sort_col is not None:
             filtered.sort(key=self._sort_key, reverse=(self._sort_asc is False))
         else:
             filtered.sort(key=lambda x: x[0].lower())
 
-        for name, data, has_pt in filtered:
-            status = data.get("status", "")
-            notes  = data.get("notes",  "")
-            pt_txt = "YES" if has_pt else "NO"
+        for name, data, has_pt, is_owned in filtered:
+            status    = data.get("status", "")
+            notes     = data.get("notes",  "")
+            pt_txt    = "YES" if has_pt   else "NO"
+            owned_txt = "YES" if is_owned else "NO"
 
             if is_core:
                 row_tag = "core_yes" if has_pt else "core_no"
@@ -794,7 +863,7 @@ class ArchipelagoTracker(tk.Tk):
 
             tags = [row_tag] + (["new"] if name in new_names else [])
             self._tree.insert("", "end",
-                              values=(name, status, pt_txt, notes),
+                              values=(name, status, pt_txt, notes, owned_txt),
                               tags=tags)
 
         self._count_lbl.config(text=f"{len(filtered)} jeux")
@@ -973,6 +1042,102 @@ class ArchipelagoTracker(tk.Tk):
 
         tk.Frame(pad, bg=BORDER, height=1).pack(fill="x", pady=(16, 12))
 
+        # ── Steam ─────────────────────────────────────────────────────────
+        tk.Label(pad, text="Steam", bg=BG, fg=TEXT,
+                 font=("Courier New", 9, "bold")).pack(anchor="w")
+        tk.Label(pad,
+                 text="Permet d'afficher la colonne Owned (jeux possédés sur Steam).",
+                 bg=BG, fg=TEXT_DIM, font=("Courier New", 8),
+                 justify="left").pack(anchor="w", pady=(2, 8))
+
+        tk.Label(pad, text="Steam Web API Key :", bg=BG, fg=TEXT_DIM,
+                 font=("Courier New", 8)).pack(anchor="w")
+        _s = load_settings()
+        steam_key_var = tk.StringVar(value=_s.get("steam_api_key", ""))
+        steam_key_entry = tk.Entry(pad, textvariable=steam_key_var,
+                                   bg=BG3, fg=TEXT, insertbackground=TEXT,
+                                   relief="flat", font=("Courier New", 9),
+                                   width=48, show="•")
+        steam_key_entry.pack(anchor="w", ipady=5, pady=(2, 2))
+
+        show_sk_var = tk.BooleanVar(value=False)
+        def _toggle_sk():
+            steam_key_entry.config(show="" if show_sk_var.get() else "•")
+        tk.Checkbutton(pad, text="Afficher la clé", variable=show_sk_var,
+                       command=_toggle_sk,
+                       bg=BG, fg=TEXT_DIM, selectcolor=BG3,
+                       activebackground=BG, font=("Courier New", 8)).pack(anchor="w")
+
+        sk_lnk = tk.Label(pad,
+                           text="→ Obtenir une clé sur steamcommunity.com/dev/apikey",
+                           bg=BG, fg=ACCENT2, font=("Courier New", 8, "underline"),
+                           cursor="hand2")
+        sk_lnk.pack(anchor="w", pady=(2, 10))
+        sk_lnk.bind("<Button-1>", lambda e: webbrowser.open(
+            "https://steamcommunity.com/dev/apikey"))
+
+        tk.Label(pad, text="Steam ID(s) — un par ligne (compte unique ou famille) :",
+                 bg=BG, fg=TEXT_DIM, font=("Courier New", 8)).pack(anchor="w")
+        steam_ids_txt = tk.Text(pad, bg=BG3, fg=TEXT, insertbackground=TEXT,
+                                relief="flat", font=("Courier New", 9),
+                                width=48, height=4)
+        steam_ids_txt.insert("1.0", _s.get("steam_ids", ""))
+        steam_ids_txt.pack(anchor="w", pady=(2, 4))
+        tk.Label(pad,
+                 text="Trouver votre Steam ID : steamidfinder.com",
+                 bg=BG, fg=TEXT_DIM, font=("Courier New", 8)).pack(anchor="w")
+
+        # ── Steam refresh button ──────────────────────────────────────────
+        steam_status_lbl = tk.Label(pad, text="", bg=BG, fg=TEXT_DIM,
+                                    font=("Courier New", 8))
+        steam_status_lbl.pack(anchor="w", pady=(4, 0))
+
+        def _do_steam_refresh(btn):
+            key  = steam_key_var.get().strip()
+            ids  = [x.strip() for x in steam_ids_txt.get("1.0", "end").splitlines()
+                    if x.strip()]
+            if not key or not ids:
+                steam_status_lbl.config(
+                    text="⚠ Clé API et au moins un Steam ID requis.", fg=YELLOW)
+                return
+            btn.config(state="disabled", text="🎮  Chargement...")
+            steam_status_lbl.config(text="Connexion à Steam...", fg=TEXT_DIM)
+
+            def _thread():
+                owned = fetch_steam_owned(key, ids)
+                def _done():
+                    if owned:
+                        self._steam_owned = owned
+                        cache = load_cache()
+                        cache["_steam_owned"] = list(owned)
+                        save_cache(cache)
+                        steam_status_lbl.config(
+                            text="✓ " + str(len(owned)) + " jeux détectés et sauvegardés.",
+                            fg=GREEN)
+                        self._refresh_table()
+                    else:
+                        steam_status_lbl.config(
+                            text="✗ Échec — vérifiez la clé et les Steam IDs.",
+                            fg=RED)
+                    btn.config(state="normal", text="🎮  Actualiser Steam")
+                win.after(0, _done)
+            threading.Thread(target=_thread, daemon=True).start()
+
+        steam_btn = tk.Button(pad, text="🎮  Actualiser Steam",
+                              bg=BG3, fg=TEXT,
+                              font=("Courier New", 9, "bold"),
+                              relief="flat", padx=12, pady=5, cursor="hand2",
+                              activebackground=ACCENT, activeforeground="white")
+        steam_btn.config(command=lambda: _do_steam_refresh(steam_btn))
+        steam_btn.pack(anchor="w", pady=(6, 0))
+
+        if self._steam_owned:
+            steam_status_lbl.config(
+                text="Cache actuel : " + str(len(self._steam_owned)) + " jeux.",
+                fg=TEXT_DIM)
+
+        tk.Frame(pad, bg=BORDER, height=1).pack(fill="x", pady=(16, 12))
+
         # ── Buttons ───────────────────────────────────────────────────────
         btn_row = tk.Frame(pad, bg=BG)
         btn_row.pack(fill="x")
@@ -983,6 +1148,8 @@ class ArchipelagoTracker(tk.Tk):
             s = load_settings()
             s["github_token"]   = self._github_token
             s["check_releases"] = self._check_releases
+            s["steam_api_key"]  = steam_key_var.get().strip()
+            s["steam_ids"]      = steam_ids_txt.get("1.0", "end").strip()
             save_settings(s)
             win.destroy()
 
