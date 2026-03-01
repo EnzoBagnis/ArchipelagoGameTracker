@@ -19,9 +19,14 @@ TABS = {
     "Core Verified":   "1675722515",
 }
 
+POPTRACKER_API = (
+    "https://archipelago.miraheze.org/w/api.php"
+    "?action=query&list=categorymembers"
+    "&cmtitle=Category:Games_with_PopTracker"
+    "&cmlimit=500&format=json"
+)
+
 def get_cache_path():
-    # Sauvegarde dans %APPDATA%\ArchipelagoTracker sur Windows
-    # Sauvegarde dans ~/.config/ArchipelagoTracker sur Linux/macOS
     if os.name == "nt":
         base = os.path.join(os.environ.get("APPDATA", os.path.expanduser("~")),
                             "ArchipelagoTracker")
@@ -72,8 +77,53 @@ def rows_to_dict(rows):
 URL_PATTERN = re.compile(r'https?://\S+')
 
 def extract_urls(text):
-    """Extrait tous les URLs d'un texte."""
     return URL_PATTERN.findall(text)
+
+def fetch_poptracker_games():
+    """
+    Récupère la liste des jeux avec PopTracker depuis le wiki Archipelago.
+    Retourne un set de noms normalisés (lowercase, sans ponctuation).
+    """
+    try:
+        headers = {"User-Agent": "ArchipelagoTracker/1.0"}
+        r = requests.get(POPTRACKER_API, timeout=15, headers=headers)
+        if r.status_code != 200:
+            return set()
+        data = r.json()
+        members = data.get("query", {}).get("categorymembers", [])
+        # Normalise les noms : lowercase, retire les underscores et tirets
+        names = set()
+        for m in members:
+            title = m.get("title", "")
+            names.add(_normalize(title))
+        return names
+    except Exception:
+        return set()
+
+def _normalize(name):
+    """Normalise un nom de jeu pour la comparaison floue."""
+    n = name.lower()
+    # Retire préfixes wiki inutiles
+    for prefix in ["category:", "game:"]:
+        if n.startswith(prefix):
+            n = n[len(prefix):]
+    # Retire ponctuation et espaces superflus
+    n = re.sub(r"[:\-_'\"!.,&()]", " ", n)
+    n = re.sub(r"\s+", " ", n).strip()
+    return n
+
+def match_poptracker(game_name, poptracker_set):
+    """Cherche si un jeu a un PopTracker en comparaison floue."""
+    norm = _normalize(game_name)
+    # Correspondance exacte
+    if norm in poptracker_set:
+        return True
+    # Correspondance partielle (le nom du jeu est contenu dans un nom wiki)
+    for pt in poptracker_set:
+        if norm in pt or pt in norm:
+            if len(norm) > 4 and len(pt) > 4:  # évite les faux positifs courts
+                return True
+    return False
 
 def load_cache():
     if os.path.exists(CACHE_FILE):
@@ -94,38 +144,50 @@ ACCENT2   = "#a855f7"
 TEXT      = "#e2e8f0"
 TEXT_DIM  = "#64748b"
 BORDER    = "#30363d"
+GREEN     = "#4ade80"
+RED       = "#f87171"
 
 class ArchipelagoTracker(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Archipelago Tracker")
-        self.geometry("1100x720")
+        self.geometry("1150x740")
         self.minsize(900, 600)
         self.configure(bg=BG)
 
-        self._changes = []
-        self._all_games = {}
-        self._filter_var = tk.StringVar()
-        self._tab_var = tk.StringVar(value="Playable Worlds")
-        self._status_filter = tk.StringVar(value="All")
-        self._checking = False
+        # Icône fenêtre
+        try:
+            if getattr(sys, 'frozen', False):
+                icon_path = os.path.join(sys._MEIPASS, "logo.ico")
+            else:
+                icon_path = os.path.join(os.path.dirname(__file__), "logo.ico")
+            self.iconbitmap(icon_path)
+        except Exception:
+            pass
+
+        self._changes        = []
+        self._all_games      = {}
+        self._poptracker_set = set()   # noms normalisés des jeux avec PopTracker
+        self._filter_var     = tk.StringVar()
+        self._tab_var        = tk.StringVar(value="Playable Worlds")
+        self._status_filter  = tk.StringVar(value="All")
+        self._pt_filter      = tk.StringVar(value="All")   # filtre PopTracker
+        self._checking       = False
 
         self._build_ui()
         self.after(200, self._load_initial)
 
     # ── Build UI ──────────────────────────────────────────────────────────────
     def _build_ui(self):
-        # Header
         hdr = tk.Frame(self, bg=ACCENT, height=4)
         hdr.pack(fill="x")
 
         top = tk.Frame(self, bg=BG, pady=16, padx=20)
         top.pack(fill="x")
 
-        title_lbl = tk.Label(top, text="⬡  ARCHIPELAGO TRACKER",
-                             bg=BG, fg=TEXT,
-                             font=("Courier New", 18, "bold"))
-        title_lbl.pack(side="left")
+        tk.Label(top, text="⬡  ARCHIPELAGO TRACKER",
+                 bg=BG, fg=TEXT,
+                 font=("Courier New", 18, "bold")).pack(side="left")
 
         self._status_bar = tk.Label(top, text="Prêt", bg=BG, fg=TEXT_DIM,
                                     font=("Courier New", 10))
@@ -140,12 +202,10 @@ class ArchipelagoTracker(tk.Tk):
                                     activeforeground="white")
         self._check_btn.pack(side="right")
 
-        # Separator
         tk.Frame(self, bg=BORDER, height=1).pack(fill="x")
 
-        # Main body: left panel + right panel
         body = tk.Frame(self, bg=BG)
-        body.pack(fill="both", expand=True, padx=0, pady=0)
+        body.pack(fill="both", expand=True)
 
         # ── Left: Changes Panel ──────────────────────────────────────────────
         left = tk.Frame(body, bg=BG2, width=340)
@@ -156,7 +216,6 @@ class ArchipelagoTracker(tk.Tk):
         lhdr.pack(fill="x")
         tk.Label(lhdr, text="DERNIERS CHANGEMENTS", bg=BG2,
                  fg=ACCENT2, font=("Courier New", 9, "bold")).pack(anchor="w")
-
         self._last_check_lbl = tk.Label(lhdr, text="Jamais vérifié",
                                         bg=BG2, fg=TEXT_DIM,
                                         font=("Courier New", 8))
@@ -164,7 +223,6 @@ class ArchipelagoTracker(tk.Tk):
 
         tk.Frame(left, bg=BORDER, height=1).pack(fill="x")
 
-        # Changes scrollable area
         changes_frame = tk.Frame(left, bg=BG2)
         changes_frame.pack(fill="both", expand=True)
 
@@ -173,7 +231,6 @@ class ArchipelagoTracker(tk.Tk):
         changes_sb = ttk.Scrollbar(changes_frame, orient="vertical",
                                    command=self._changes_canvas.yview)
         self._changes_inner = tk.Frame(self._changes_canvas, bg=BG2)
-
         self._changes_inner.bind("<Configure>",
             lambda e: self._changes_canvas.configure(
                 scrollregion=self._changes_canvas.bbox("all")))
@@ -182,58 +239,57 @@ class ArchipelagoTracker(tk.Tk):
         self._changes_canvas.configure(yscrollcommand=changes_sb.set)
         self._changes_canvas.pack(side="left", fill="both", expand=True)
         changes_sb.pack(side="right", fill="y")
-
         self._changes_inner.bind_all("<MouseWheel>", self._on_mousewheel_changes)
 
         # ── Right: Games List ────────────────────────────────────────────────
         right = tk.Frame(body, bg=BG)
         right.pack(side="left", fill="both", expand=True)
 
-        # Filters bar
         fbar = tk.Frame(right, bg=BG3, pady=10, padx=14)
         fbar.pack(fill="x")
 
-        # Tab selector
         for tab in TABS.keys():
             rb = tk.Radiobutton(fbar, text=tab, variable=self._tab_var,
                                 value=tab, command=self._refresh_table,
                                 bg=BG3, fg=TEXT, selectcolor=BG3,
                                 activebackground=BG3, activeforeground=ACCENT2,
                                 font=("Courier New", 9, "bold"),
-                                indicatoron=False,
-                                relief="flat", padx=10, pady=4,
-                                cursor="hand2")
+                                indicatoron=False, relief="flat",
+                                padx=10, pady=4, cursor="hand2")
             rb.pack(side="left", padx=(0, 4))
 
-        # Search
         tk.Label(fbar, text="🔍", bg=BG3, fg=TEXT_DIM,
                  font=("Courier New", 11)).pack(side="left", padx=(16, 4))
         search_entry = tk.Entry(fbar, textvariable=self._filter_var,
                                 bg=BG, fg=TEXT, insertbackground=TEXT,
-                                relief="flat", font=("Courier New", 10),
-                                width=22)
+                                relief="flat", font=("Courier New", 10), width=20)
         search_entry.pack(side="left", ipady=4)
         self._filter_var.trace_add("write", lambda *a: self._refresh_table())
 
-        # Status filter
         tk.Label(fbar, text="  Statut:", bg=BG3, fg=TEXT_DIM,
                  font=("Courier New", 9)).pack(side="left", padx=(12, 4))
         statuses = ["All"] + list(STATUS_COLORS.keys()) + ["Other"]
-        status_menu = ttk.Combobox(fbar, textvariable=self._status_filter,
-                                   values=statuses, state="readonly",
-                                   width=14,
-                                   font=("Courier New", 9))
-        status_menu.pack(side="left")
+        ttk.Combobox(fbar, textvariable=self._status_filter, values=statuses,
+                     state="readonly", width=13,
+                     font=("Courier New", 9)).pack(side="left")
         self._status_filter.trace_add("write", lambda *a: self._refresh_table())
 
-        # Game count
+        # Filtre PopTracker
+        tk.Label(fbar, text="  PopTracker:", bg=BG3, fg=TEXT_DIM,
+                 font=("Courier New", 9)).pack(side="left", padx=(12, 4))
+        ttk.Combobox(fbar, textvariable=self._pt_filter,
+                     values=["All", "✅ Disponible", "❌ Non disponible"],
+                     state="readonly", width=16,
+                     font=("Courier New", 9)).pack(side="left")
+        self._pt_filter.trace_add("write", lambda *a: self._refresh_table())
+
         self._count_lbl = tk.Label(fbar, text="", bg=BG3, fg=TEXT_DIM,
                                    font=("Courier New", 9))
         self._count_lbl.pack(side="right", padx=8)
 
         # Table
         table_frame = tk.Frame(right, bg=BG)
-        table_frame.pack(fill="both", expand=True, padx=0, pady=0)
+        table_frame.pack(fill="both", expand=True)
 
         style = ttk.Style()
         style.theme_use("clam")
@@ -248,16 +304,17 @@ class ArchipelagoTracker(tk.Tk):
                   background=[("selected", ACCENT)],
                   foreground=[("selected", "white")])
 
-        cols = ("game", "status", "notes")
+        cols = ("game", "status", "poptracker", "notes")
         self._tree = ttk.Treeview(table_frame, columns=cols,
-                                   show="headings",
-                                   style="Custom.Treeview")
-        self._tree.heading("game",   text="Jeu", anchor="w")
-        self._tree.heading("status", text="Statut", anchor="w")
-        self._tree.heading("notes",  text="Notes", anchor="w")
-        self._tree.column("game",   width=260, minwidth=160)
-        self._tree.column("status", width=130, minwidth=100)
-        self._tree.column("notes",  width=500, minwidth=200)
+                                   show="headings", style="Custom.Treeview")
+        self._tree.heading("game",       text="Jeu",        anchor="w")
+        self._tree.heading("status",     text="Statut",     anchor="w")
+        self._tree.heading("poptracker", text="PopTracker", anchor="w")
+        self._tree.heading("notes",      text="Notes",      anchor="w")
+        self._tree.column("game",       width=240, minwidth=140)
+        self._tree.column("status",     width=120, minwidth=90)
+        self._tree.column("poptracker", width=100, minwidth=80)
+        self._tree.column("notes",      width=480, minwidth=180)
 
         vsb = ttk.Scrollbar(table_frame, orient="vertical",
                              command=self._tree.yview)
@@ -265,16 +322,14 @@ class ArchipelagoTracker(tk.Tk):
         self._tree.pack(side="left", fill="both", expand=True)
         vsb.pack(side="right", fill="y")
 
-        # Row tags for status colors
         for status, color in STATUS_COLORS.items():
             self._tree.tag_configure(status, foreground=color)
         self._tree.tag_configure("Other", foreground=TEXT_DIM)
-        self._tree.tag_configure("new", background="#1a2e1a")
+        self._tree.tag_configure("new",   background="#1a2e1a")
 
-        # Bind click to show detail
         self._tree.bind("<<TreeviewSelect>>", self._on_row_select)
 
-        # ── Detail Panel (bottom) ────────────────────────────────────────────
+        # ── Detail Panel ─────────────────────────────────────────────────────
         tk.Frame(right, bg=BORDER, height=1).pack(fill="x")
 
         detail = tk.Frame(right, bg=BG2, height=160)
@@ -284,27 +339,25 @@ class ArchipelagoTracker(tk.Tk):
         detail_top = tk.Frame(detail, bg=BG2, padx=14, pady=8)
         detail_top.pack(fill="x")
 
-        self._detail_title = tk.Label(detail_top, text="Cliquez sur un jeu pour voir les détails",
+        self._detail_title = tk.Label(detail_top,
+                                      text="Cliquez sur un jeu pour voir les détails",
                                       bg=BG2, fg=TEXT_DIM,
-                                      font=("Courier New", 10, "bold"),
-                                      anchor="w")
+                                      font=("Courier New", 10, "bold"), anchor="w")
         self._detail_title.pack(side="left", fill="x", expand=True)
 
-        self._detail_status = tk.Label(detail_top, text="",
-                                       bg=BG2, fg=TEXT,
-                                       font=("Courier New", 9),
-                                       anchor="e")
-        self._detail_status.pack(side="right")
+        self._detail_status = tk.Label(detail_top, text="", bg=BG2, fg=TEXT,
+                                       font=("Courier New", 9), anchor="e")
+        self._detail_status.pack(side="right", padx=(8, 0))
 
-        self._detail_notes = tk.Label(detail, text="",
-                                      bg=BG2, fg=TEXT_DIM,
-                                      font=("Courier New", 9),
-                                      anchor="w", justify="left",
-                                      wraplength=600,
-                                      padx=14)
+        self._detail_pt = tk.Label(detail_top, text="", bg=BG2, fg=TEXT,
+                                   font=("Courier New", 9), anchor="e")
+        self._detail_pt.pack(side="right")
+
+        self._detail_notes = tk.Label(detail, text="", bg=BG2, fg=TEXT_DIM,
+                                      font=("Courier New", 9), anchor="w",
+                                      justify="left", wraplength=700, padx=14)
         self._detail_notes.pack(fill="x")
 
-        # Links frame (scrollable horizontally)
         self._links_frame = tk.Frame(detail, bg=BG2, padx=14, pady=4)
         self._links_frame.pack(fill="x")
 
@@ -316,12 +369,15 @@ class ArchipelagoTracker(tk.Tk):
     def _load_initial(self):
         cache = load_cache()
         if cache:
-            self._all_games = cache
+            self._all_games      = cache
+            self._poptracker_set = set(cache.get("_poptracker", []))
             self._refresh_table()
             ts = cache.get("_timestamp", "")
             if ts:
                 self._last_check_lbl.config(text=f"Dernier check: {ts}")
-            self._set_status(f"Cache chargé — {sum(len(v) for k,v in cache.items() if k != '_timestamp')} jeux")
+            total = sum(len(v) for k, v in cache.items()
+                        if k not in ("_timestamp", "_poptracker"))
+            self._set_status(f"Cache chargé — {total} jeux · {len(self._poptracker_set)} avec PopTracker")
         else:
             self._set_status("Aucun cache — Cliquez sur Vérifier !")
 
@@ -334,10 +390,11 @@ class ArchipelagoTracker(tk.Tk):
         threading.Thread(target=self._do_check, daemon=True).start()
 
     def _do_check(self):
-        cache = load_cache()
+        cache    = load_cache()
         new_cache = {"_timestamp": datetime.now().strftime("%Y-%m-%d %H:%M")}
-        changes = []
+        changes  = []
 
+        # ── Google Sheets ──────────────────────────────────────────────────
         for tab_name, gid in TABS.items():
             self._set_status(f"Récupération: {tab_name}...")
             rows = fetch_tab(tab_name, gid)
@@ -346,17 +403,17 @@ class ArchipelagoTracker(tk.Tk):
                 continue
 
             current = rows_to_dict(rows)
-            old = cache.get(tab_name, {})
+            old     = cache.get(tab_name, {})
             if isinstance(old, dict) and "_timestamp" in old:
                 old = {}
 
-            added   = {k: v for k, v in current.items() if k not in old}
-            removed = {k: v for k, v in old.items() if k not in current}
+            added    = {k: v for k, v in current.items() if k not in old}
+            removed  = {k: v for k, v in old.items()     if k not in current}
             modified = {}
             for k in current:
                 if k in old and isinstance(old[k], dict):
                     if old[k].get("status") != current[k]["status"]:
-                        modified[k] = (old[k].get("status","?"), current[k]["status"])
+                        modified[k] = (old[k].get("status", "?"), current[k]["status"])
 
             for game, data in added.items():
                 changes.append(("➕", tab_name, game, data["status"], "Ajouté"))
@@ -367,9 +424,20 @@ class ArchipelagoTracker(tk.Tk):
 
             new_cache[tab_name] = current
 
+        # ── PopTracker Wiki ────────────────────────────────────────────────
+        self._set_status("Récupération: PopTracker Wiki...")
+        pt_set = fetch_poptracker_games()
+        if pt_set:
+            self._poptracker_set = pt_set
+            new_cache["_poptracker"] = list(pt_set)
+        else:
+            # Garde l'ancien cache si la requête échoue
+            self._poptracker_set = set(cache.get("_poptracker", []))
+            new_cache["_poptracker"] = list(self._poptracker_set)
+
         save_cache(new_cache)
         self._all_games = new_cache
-        self._changes = changes
+        self._changes   = changes
 
         self.after(0, self._on_check_done)
 
@@ -381,7 +449,8 @@ class ArchipelagoTracker(tk.Tk):
         self._refresh_table()
         self._refresh_changes()
         n = len(self._changes)
-        self._set_status(f"✓ Check terminé — {n} changement(s) détecté(s)")
+        pt = len(self._poptracker_set)
+        self._set_status(f"✓ Check terminé — {n} changement(s) · {pt} jeux avec PopTracker")
 
     # ── Refresh Changes Panel ─────────────────────────────────────────────────
     def _refresh_changes(self):
@@ -389,36 +458,26 @@ class ArchipelagoTracker(tk.Tk):
             w.destroy()
 
         if not self._changes:
-            tk.Label(self._changes_inner,
-                     text="Aucun changement détecté",
-                     bg=BG2, fg=TEXT_DIM,
-                     font=("Courier New", 9),
+            tk.Label(self._changes_inner, text="Aucun changement détecté",
+                     bg=BG2, fg=TEXT_DIM, font=("Courier New", 9),
                      padx=14, pady=10).pack(anchor="w")
             return
 
         for icon, tab, game, status, desc in self._changes:
             row = tk.Frame(self._changes_inner, bg=BG2, pady=6, padx=14)
             row.pack(fill="x")
-
             top_row = tk.Frame(row, bg=BG2)
             top_row.pack(fill="x")
-
             tk.Label(top_row, text=icon, bg=BG2,
                      font=("Segoe UI Emoji", 11)).pack(side="left")
-            tk.Label(top_row, text=f"  {game}",
-                     bg=BG2, fg=TEXT,
+            tk.Label(top_row, text=f"  {game}", bg=BG2, fg=TEXT,
                      font=("Courier New", 9, "bold"),
                      wraplength=280, justify="left").pack(side="left")
-
             bot_row = tk.Frame(row, bg=BG2)
             bot_row.pack(fill="x")
-
             color = STATUS_COLORS.get(status, TEXT_DIM)
-            tk.Label(bot_row,
-                     text=f"   {tab} — {desc}",
-                     bg=BG2, fg=color,
-                     font=("Courier New", 8)).pack(side="left")
-
+            tk.Label(bot_row, text=f"   {tab} — {desc}",
+                     bg=BG2, fg=color, font=("Courier New", 8)).pack(side="left")
             tk.Frame(self._changes_inner, bg=BORDER, height=1).pack(fill="x", padx=14)
 
     # ── Refresh Games Table ───────────────────────────────────────────────────
@@ -426,15 +485,14 @@ class ArchipelagoTracker(tk.Tk):
         for item in self._tree.get_children():
             self._tree.delete(item)
 
-        tab = self._tab_var.get()
+        tab   = self._tab_var.get()
         games = self._all_games.get(tab, {})
         if not isinstance(games, dict):
             return
 
-        query  = self._filter_var.get().lower()
-        sf     = self._status_filter.get()
-
-        # New game names from last check
+        query    = self._filter_var.get().lower()
+        sf       = self._status_filter.get()
+        pt_filt  = self._pt_filter.get()
         new_names = {g for icon, t, g, *_ in self._changes if icon == "➕" and t == tab}
 
         count = 0
@@ -442,24 +500,28 @@ class ArchipelagoTracker(tk.Tk):
             if not isinstance(data, dict):
                 continue
             status = data.get("status", "")
-            notes  = data.get("notes", "")
+            notes  = data.get("notes",  "")
+            has_pt = match_poptracker(name, self._poptracker_set)
+            pt_txt = "✅" if has_pt else "❌"
 
-            if query and query not in name.lower() and query not in status.lower() and query not in notes.lower():
+            # Filtres
+            if query and query not in name.lower() \
+                     and query not in status.lower() \
+                     and query not in notes.lower():
                 continue
             if sf != "All":
                 if sf == "Other":
-                    if status in STATUS_COLORS:
-                        continue
+                    if status in STATUS_COLORS: continue
                 elif status != sf:
                     continue
+            if pt_filt == "✅ Disponible"    and not has_pt: continue
+            if pt_filt == "❌ Non disponible" and has_pt:    continue
 
-            tag = status if status in STATUS_COLORS else "Other"
-            tags = [tag]
-            if name in new_names:
-                tags.append("new")
+            tag  = status if status in STATUS_COLORS else "Other"
+            tags = [tag] + (["new"] if name in new_names else [])
 
             self._tree.insert("", "end",
-                              values=(name, status, notes),
+                              values=(name, status, pt_txt, notes),
                               tags=tags)
             count += 1
 
@@ -471,21 +533,30 @@ class ArchipelagoTracker(tk.Tk):
         if not sel:
             return
         values = self._tree.item(sel[0], "values")
-        if not values:
+        if not values or len(values) < 4:
             return
-        name, status, notes = values[0], values[1], values[2]
+        name, status, pt_txt, notes = values[0], values[1], values[2], values[3]
 
-        # Update title & status
         self._detail_title.config(text=name, fg=TEXT)
         color = STATUS_COLORS.get(status, TEXT_DIM)
         self._detail_status.config(text=f"● {status}", fg=color)
 
-        # Parse notes into labeled links
-        labeled_links, plain_text = self._parse_notes(notes)
+        has_pt = match_poptracker(name, self._poptracker_set)
+        if has_pt:
+            wiki_url = "https://archipelago.miraheze.org/wiki/" + \
+                       name.replace(" ", "_")
+            self._detail_pt.config(
+                text="🎯 PopTracker: ✅",
+                fg=GREEN, cursor="hand2")
+            self._detail_pt.bind("<Button-1>",
+                lambda e, u=wiki_url: webbrowser.open(u))
+        else:
+            self._detail_pt.config(text="🎯 PopTracker: ❌", fg=RED, cursor="")
+            self._detail_pt.unbind("<Button-1>")
 
+        labeled_links, plain_text = self._parse_notes(notes)
         self._detail_notes.config(text=plain_text if plain_text else "")
 
-        # Clear old links
         for w in self._links_frame.winfo_children():
             w.destroy()
 
@@ -493,17 +564,12 @@ class ArchipelagoTracker(tk.Tk):
             for label, url in labeled_links:
                 row = tk.Frame(self._links_frame, bg=BG2)
                 row.pack(anchor="w", pady=1)
-
-                # Label (e.g. "APWorld:", "Setup Guide:", "🔗")
                 lbl_text = label if label else "🔗"
-                tk.Label(row, text=lbl_text,
-                         bg=BG2, fg=TEXT_DIM,
+                tk.Label(row, text=lbl_text, bg=BG2, fg=TEXT_DIM,
                          font=("Courier New", 9),
                          width=16, anchor="w").pack(side="left")
-
                 short = self._short_url(url)
-                lnk = tk.Label(row, text=short,
-                               bg=BG2, fg=ACCENT2,
+                lnk = tk.Label(row, text=short, bg=BG2, fg=ACCENT2,
                                font=("Courier New", 9, "underline"),
                                cursor="hand2", anchor="w")
                 lnk.pack(side="left")
@@ -512,53 +578,35 @@ class ArchipelagoTracker(tk.Tk):
                 lnk.bind("<Leave>", lambda e, l=lnk: l.config(fg=ACCENT2))
 
     def _parse_notes(self, notes):
-        """
-        Parse les notes pour extraire des paires (label, url).
-        Gère les formats:
-          - "APWorld: https://..."
-          - "Setup Guide: https://..."
-          - "https://..." (lien seul)
-          - texte libre mélangé
-        """
         if not notes:
             return [], ""
-
-        labeled = []
-        lines = notes.replace("\\n", "\n").splitlines()
+        labeled     = []
         plain_parts = []
-
+        lines = notes.replace("\\n", "\n").splitlines()
         for line in lines:
             line = line.strip()
             if not line:
                 continue
-
             urls_in_line = extract_urls(line)
             if not urls_in_line:
                 plain_parts.append(line)
                 continue
-
-            # Cherche un label avant l'URL (ex: "APWorld: https://...")
             for url in urls_in_line:
                 before = line[:line.index(url)].strip().rstrip(":").strip()
-                # Nettoie le reste de la ligne (texte après l'url)
-                after = line[line.index(url) + len(url):].strip()
+                after  = line[line.index(url) + len(url):].strip()
                 if after and not extract_urls(after):
                     plain_parts.append(after)
-                label = before if before else ""
-                labeled.append((label + (":" if before else ""), url))
-
-        plain = " • ".join(plain_parts).strip()
-        return labeled, plain
+                labeled.append((before + (":" if before else ""), url))
+        return labeled, " • ".join(plain_parts).strip()
 
     def _short_url(self, url):
-        """Affiche une version courte de l'URL."""
         try:
             from urllib.parse import urlparse
-            p = urlparse(url)
+            p    = urlparse(url)
             host = p.netloc.replace("www.", "")
             path = p.path[:35] + ("…" if len(p.path) > 35 else "")
             return f"{host}{path}"
-        except:
+        except Exception:
             return url[:50] + "…"
 
     # ── Status bar ────────────────────────────────────────────────────────────
