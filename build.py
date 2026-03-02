@@ -37,11 +37,20 @@ def build():
     target_name = os.path.splitext(os.path.basename(target_file))[0]
     print(f"\n✅ Fichier sélectionné : {target_file}")
 
-    for folder in ["build", "dist", "__pycache__"]:
+    # delete previous build artefacts, including any compiled bytecode
+    for folder in ["build", "dist"]:
         full = os.path.join(script_dir, folder)
         if os.path.exists(full):
             shutil.rmtree(full)
             print(f"  Ancien dossier '{folder}' supprimé.")
+
+    # remove all __pycache__ dirs in the tree so stale .pyc files can't sneak into
+    # the PyInstaller archive (they would otherwise override the updated .py files)
+    for root, dirs, files in os.walk(script_dir):
+        if "__pycache__" in dirs:
+            cache_dir = os.path.join(root, "__pycache__")
+            shutil.rmtree(cache_dir)
+            print(f"  Cache supprimé : {cache_dir}")
 
     spec_file = os.path.join(script_dir, f"{target_name}.spec")
     if os.path.exists(spec_file):
@@ -59,6 +68,13 @@ def build():
         "--windowed",
         "--name", target_name,
     ]
+
+    # include language resources so that translations remain available
+    lang_dir = os.path.join(script_dir, "lang")
+    if os.path.isdir(lang_dir):
+        # use ; on Windows to separate source and dest when bundling data
+        cmd += ["--add-data", f"{lang_dir};lang"]
+        print(" Langue : dossier 'lang' inclus dans l'exécutable.")
 
     if os.path.exists(icon_path):
         cmd += ["--icon", icon_path]

@@ -21,11 +21,13 @@ imports:
     <a href="#_collections_abc">_collections_abc</a>
  &#8226;   <a href="#_weakrefset">_weakrefset</a>
  &#8226;   <a href="#abc">abc</a>
+ &#8226;   <a href="#cache">cache</a>
  &#8226;   <a href="#codecs">codecs</a>
  &#8226;   <a href="#collections">collections</a>
  &#8226;   <a href="#collections.abc">collections.abc</a>
+ &#8226;   <a href="#config">config</a>
  &#8226;   <a href="#copyreg">copyreg</a>
- &#8226;   <a href="#csv">csv</a>
+ &#8226;   <a href="#data">data</a>
  &#8226;   <a href="#datetime">datetime</a>
  &#8226;   <a href="#encodings">encodings</a>
  &#8226;   <a href="#encodings.aliases">encodings.aliases</a>
@@ -156,8 +158,8 @@ imports:
  &#8226;   <a href="#heapq">heapq</a>
  &#8226;   <a href="#io">io</a>
  &#8226;   <a href="#ipaddress">ipaddress</a>
- &#8226;   <a href="#json">json</a>
  &#8226;   <a href="#keyword">keyword</a>
+ &#8226;   <a href="#lang.l18n">lang.l18n</a>
  &#8226;   <a href="#linecache">linecache</a>
  &#8226;   <a href="#locale">locale</a>
  &#8226;   <a href="#ntpath">ntpath</a>
@@ -173,21 +175,22 @@ imports:
  &#8226;   <a href="#re._constants">re._constants</a>
  &#8226;   <a href="#re._parser">re._parser</a>
  &#8226;   <a href="#reprlib">reprlib</a>
- &#8226;   <a href="#requests">requests</a>
  &#8226;   <a href="#sre_compile">sre_compile</a>
  &#8226;   <a href="#sre_constants">sre_constants</a>
  &#8226;   <a href="#sre_parse">sre_parse</a>
  &#8226;   <a href="#stat">stat</a>
  &#8226;   <a href="#sys">sys</a>
  &#8226;   <a href="#threading">threading</a>
- &#8226;   <a href="#time">time</a>
  &#8226;   <a href="#tkinter">tkinter</a>
- &#8226;   <a href="#tkinter.font">tkinter.font</a>
  &#8226;   <a href="#tkinter.ttk">tkinter.ttk</a>
  &#8226;   <a href="#token">token</a>
  &#8226;   <a href="#tokenize">tokenize</a>
  &#8226;   <a href="#traceback">traceback</a>
  &#8226;   <a href="#types">types</a>
+ &#8226;   <a href="#ui.changes">ui.changes</a>
+ &#8226;   <a href="#ui.detail">ui.detail</a>
+ &#8226;   <a href="#ui.settings">ui.settings</a>
+ &#8226;   <a href="#ui.table">ui.table</a>
  &#8226;   <a href="#urllib">urllib</a>
  &#8226;   <a href="#urllib.error">urllib.error</a>
  &#8226;   <a href="#urllib.parse">urllib.parse</a>
@@ -196,7 +199,6 @@ imports:
  &#8226;   <a href="#urllib.robotparser">urllib.robotparser</a>
  &#8226;   <a href="#warnings">warnings</a>
  &#8226;   <a href="#weakref">weakref</a>
- &#8226;   <a href="#webbrowser">webbrowser</a>
 
   </div>
 
@@ -276,7 +278,7 @@ imported by:
   <a target="code" href="" type="text/plain"><tt>'org.python'</tt></a>
 <span class="moduletype">MissingModule</span>  <div class="import">
 imported by:
-    <a href="#pickle">pickle</a>
+    <a href="#copy">copy</a>
 
   </div>
 
@@ -1402,6 +1404,8 @@ imported by:
  &#8226;   <a href="#ssl">ssl</a>
  &#8226;   <a href="#urllib.request">urllib.request</a>
  &#8226;   <a href="#urllib3.util.request">urllib3.util.request</a>
+ &#8226;   <a href="#yaml.constructor">yaml.constructor</a>
+ &#8226;   <a href="#yaml.representer">yaml.representer</a>
 
   </div>
 
@@ -1435,6 +1439,7 @@ imported by:
  &#8226;   <a href="#quopri">quopri</a>
  &#8226;   <a href="#urllib3.filepost">urllib3.filepost</a>
  &#8226;   <a href="#urllib3.util.ssl_">urllib3.util.ssl_</a>
+ &#8226;   <a href="#yaml.constructor">yaml.constructor</a>
  &#8226;   <a href="#zipfile">zipfile</a>
 
   </div>
@@ -1543,6 +1548,25 @@ imports:
   <div class="import">
 imported by:
     <a href="#simplejson.compat">simplejson.compat</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="cache"></a>
+  <a target="code" href="///C:/Users/matis/Documents/GitHub/ArchipelagoGameTracker/cache.py" type="text/plain"><tt>cache</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#json">json</a>
+ &#8226;   <a href="#os">os</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#lang.l18n">lang.l18n</a>
+ &#8226;   <a href="#main.py">main.py</a>
+ &#8226;   <a href="#ui.settings">ui.settings</a>
 
   </div>
 
@@ -2014,6 +2038,7 @@ imported by:
  &#8226;   <a href="#requests.utils">requests.utils</a>
  &#8226;   <a href="#tokenize">tokenize</a>
  &#8226;   <a href="#urllib3.filepost">urllib3.filepost</a>
+ &#8226;   <a href="#yaml.reader">yaml.reader</a>
 
   </div>
 
@@ -2082,6 +2107,7 @@ imported by:
  &#8226;   <a href="#urllib3.util.queue">urllib3.util.queue</a>
  &#8226;   <a href="#urllib3.util.retry">urllib3.util.retry</a>
  &#8226;   <a href="#urllib3.util.url">urllib3.util.url</a>
+ &#8226;   <a href="#yaml.representer">yaml.representer</a>
 
   </div>
 
@@ -2145,6 +2171,29 @@ imported by:
  &#8226;   <a href="#tracemalloc">tracemalloc</a>
  &#8226;   <a href="#typing">typing</a>
  &#8226;   <a href="#urllib3._collections">urllib3._collections</a>
+ &#8226;   <a href="#yaml.constructor">yaml.constructor</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="config"></a>
+  <a target="code" href="///C:/Users/matis/Documents/GitHub/ArchipelagoGameTracker/config.py" type="text/plain"><tt>config</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#os">os</a>
+ &#8226;   <a href="#re">re</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#data">data</a>
+ &#8226;   <a href="#main.py">main.py</a>
+ &#8226;   <a href="#ui.changes">ui.changes</a>
+ &#8226;   <a href="#ui.detail">ui.detail</a>
+ &#8226;   <a href="#ui.settings">ui.settings</a>
+ &#8226;   <a href="#ui.table">ui.table</a>
 
   </div>
 
@@ -2207,8 +2256,8 @@ imported by:
   <a target="code" href="///C:/Users/matis/AppData/Local/Programs/Python/Python311/Lib/copy.py" type="text/plain"><tt>copy</tt></a>
 <span class="moduletype">SourceModule</span>  <div class="import">
 imports:
-    <a href="#copyreg">copyreg</a>
- &#8226;   <a href="#org">org</a>
+    <a href="#'org.python'">'org.python'</a>
+ &#8226;   <a href="#copyreg">copyreg</a>
  &#8226;   <a href="#types">types</a>
  &#8226;   <a href="#weakref">weakref</a>
 
@@ -2258,6 +2307,7 @@ imported by:
  &#8226;   <a href="#main.py">main.py</a>
  &#8226;   <a href="#pickle">pickle</a>
  &#8226;   <a href="#re">re</a>
+ &#8226;   <a href="#yaml.representer">yaml.representer</a>
 
   </div>
 
@@ -3602,8 +3652,32 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#importlib.metadata">importlib.metadata</a>
- &#8226;   <a href="#main.py">main.py</a>
+    <a href="#data">data</a>
+ &#8226;   <a href="#importlib.metadata">importlib.metadata</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="data"></a>
+  <a target="code" href="///C:/Users/matis/Documents/GitHub/ArchipelagoGameTracker/data.py" type="text/plain"><tt>data</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#config">config</a>
+ &#8226;   <a href="#csv">csv</a>
+ &#8226;   <a href="#io">io</a>
+ &#8226;   <a href="#re">re</a>
+ &#8226;   <a href="#requests">requests</a>
+ &#8226;   <a href="#unicodedata">unicodedata</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#main.py">main.py</a>
+ &#8226;   <a href="#ui.detail">ui.detail</a>
+ &#8226;   <a href="#ui.settings">ui.settings</a>
+ &#8226;   <a href="#ui.table">ui.table</a>
 
   </div>
 
@@ -3662,6 +3736,8 @@ imported by:
  &#8226;   <a href="#requests.models">requests.models</a>
  &#8226;   <a href="#requests.sessions">requests.sessions</a>
  &#8226;   <a href="#urllib3.connection">urllib3.connection</a>
+ &#8226;   <a href="#yaml.constructor">yaml.constructor</a>
+ &#8226;   <a href="#yaml.representer">yaml.representer</a>
 
   </div>
 
@@ -7398,6 +7474,7 @@ imports:
  &#8226;   <a href="#importlib">importlib</a>
  &#8226;   <a href="#importlib._bootstrap">importlib._bootstrap</a>
  &#8226;   <a href="#importlib._bootstrap_external">importlib._bootstrap_external</a>
+ &#8226;   <a href="#importlib.machinery">importlib.machinery</a>
  &#8226;   <a href="#sys">sys</a>
  &#8226;   <a href="#warnings">warnings</a>
 
@@ -7536,6 +7613,7 @@ imports:
   <div class="import">
 imported by:
     <a href="#imp">imp</a>
+ &#8226;   <a href="#importlib">importlib</a>
  &#8226;   <a href="#importlib.abc">importlib.abc</a>
  &#8226;   <a href="#inspect">inspect</a>
  &#8226;   <a href="#py_compile">py_compile</a>
@@ -7957,6 +8035,7 @@ imported by:
     <a href="#_compression">_compression</a>
  &#8226;   <a href="#bz2">bz2</a>
  &#8226;   <a href="#csv">csv</a>
+ &#8226;   <a href="#data">data</a>
  &#8226;   <a href="#dis">dis</a>
  &#8226;   <a href="#email.feedparser">email.feedparser</a>
  &#8226;   <a href="#email.generator">email.generator</a>
@@ -7998,6 +8077,7 @@ imported by:
  &#8226;   <a href="#urllib3.packages.six">urllib3.packages.six</a>
  &#8226;   <a href="#urllib3.response">urllib3.response</a>
  &#8226;   <a href="#urllib3.util.ssltransport">urllib3.util.ssltransport</a>
+ &#8226;   <a href="#yaml">yaml</a>
  &#8226;   <a href="#zipfile">zipfile</a>
 
   </div>
@@ -8043,7 +8123,6 @@ imported by:
  &#8226;   <a href="#reprlib">reprlib</a>
  &#8226;   <a href="#statistics">statistics</a>
  &#8226;   <a href="#threading">threading</a>
- &#8226;   <a href="#tkinter.font">tkinter.font</a>
  &#8226;   <a href="#tokenize">tokenize</a>
  &#8226;   <a href="#traceback">traceback</a>
  &#8226;   <a href="#urllib3.packages.backports.weakref_finalize">urllib3.packages.backports.weakref_finalize</a>
@@ -8069,11 +8148,11 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#charset_normalizer.models">charset_normalizer.models</a>
+    <a href="#cache">cache</a>
+ &#8226;   <a href="#charset_normalizer.models">charset_normalizer.models</a>
  &#8226;   <a href="#json.decoder">json.decoder</a>
  &#8226;   <a href="#json.encoder">json.encoder</a>
  &#8226;   <a href="#json.scanner">json.scanner</a>
- &#8226;   <a href="#main.py">main.py</a>
  &#8226;   <a href="#requests.compat">requests.compat</a>
 
   </div>
@@ -8146,6 +8225,42 @@ imported by:
  &#8226;   <a href="#dataclasses">dataclasses</a>
  &#8226;   <a href="#inspect">inspect</a>
  &#8226;   <a href="#main.py">main.py</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="lang"></a>
+  <a target="code" href="-" type="text/plain"><tt>lang</tt></a>
+<span class="moduletype">NamespacePackage</span>  <div class="import">
+imported by:
+    <a href="#lang.l18n">lang.l18n</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="lang.l18n"></a>
+  <a target="code" href="///C:/Users/matis/Documents/GitHub/ArchipelagoGameTracker/lang/l18n.py" type="text/plain"><tt>lang.l18n</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#cache">cache</a>
+ &#8226;   <a href="#lang">lang</a>
+ &#8226;   <a href="#os">os</a>
+ &#8226;   <a href="#re">re</a>
+ &#8226;   <a href="#sys">sys</a>
+ &#8226;   <a href="#yaml">yaml</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#main.py">main.py</a>
+ &#8226;   <a href="#ui.changes">ui.changes</a>
+ &#8226;   <a href="#ui.detail">ui.detail</a>
+ &#8226;   <a href="#ui.settings">ui.settings</a>
+ &#8226;   <a href="#ui.table">ui.table</a>
 
   </div>
 
@@ -8496,7 +8611,7 @@ imported by:
   <a target="code" href="" type="text/plain"><tt>org</tt></a>
 <span class="moduletype">MissingModule</span>  <div class="import">
 imported by:
-    <a href="#copy">copy</a>
+    <a href="#pickle">pickle</a>
 
   </div>
 
@@ -8525,8 +8640,10 @@ imports:
 imported by:
     <a href="#argparse">argparse</a>
  &#8226;   <a href="#bz2">bz2</a>
+ &#8226;   <a href="#cache">cache</a>
  &#8226;   <a href="#certifi.core">certifi.core</a>
  &#8226;   <a href="#charset_normalizer.api">charset_normalizer.api</a>
+ &#8226;   <a href="#config">config</a>
  &#8226;   <a href="#contextlib">contextlib</a>
  &#8226;   <a href="#cryptography.hazmat.bindings.openssl.binding">cryptography.hazmat.bindings.openssl.binding</a>
  &#8226;   <a href="#cryptography.hazmat.primitives.serialization.ssh">cryptography.hazmat.primitives.serialization.ssh</a>
@@ -8546,6 +8663,7 @@ imported by:
  &#8226;   <a href="#importlib.resources._legacy">importlib.resources._legacy</a>
  &#8226;   <a href="#importlib.resources.abc">importlib.resources.abc</a>
  &#8226;   <a href="#inspect">inspect</a>
+ &#8226;   <a href="#lang.l18n">lang.l18n</a>
  &#8226;   <a href="#linecache">linecache</a>
  &#8226;   <a href="#locale">locale</a>
  &#8226;   <a href="#logging">logging</a>
@@ -8627,14 +8745,14 @@ imported by:
   <a target="code" href="///C:/Users/matis/AppData/Local/Programs/Python/Python311/Lib/pickle.py" type="text/plain"><tt>pickle</tt></a>
 <span class="moduletype">SourceModule</span>  <div class="import">
 imports:
-    <a href="#'org.python'">'org.python'</a>
- &#8226;   <a href="#_compat_pickle">_compat_pickle</a>
+    <a href="#_compat_pickle">_compat_pickle</a>
  &#8226;   <a href="#_pickle">_pickle</a>
  &#8226;   <a href="#codecs">codecs</a>
  &#8226;   <a href="#copyreg">copyreg</a>
  &#8226;   <a href="#functools">functools</a>
  &#8226;   <a href="#io">io</a>
  &#8226;   <a href="#itertools">itertools</a>
+ &#8226;   <a href="#org">org</a>
  &#8226;   <a href="#pprint">pprint</a>
  &#8226;   <a href="#re">re</a>
  &#8226;   <a href="#struct">struct</a>
@@ -8878,9 +8996,11 @@ imported by:
  &#8226;   <a href="#charset_normalizer.constant">charset_normalizer.constant</a>
  &#8226;   <a href="#charset_normalizer.models">charset_normalizer.models</a>
  &#8226;   <a href="#charset_normalizer.utils">charset_normalizer.utils</a>
+ &#8226;   <a href="#config">config</a>
  &#8226;   <a href="#cryptography.hazmat.primitives.serialization.ssh">cryptography.hazmat.primitives.serialization.ssh</a>
  &#8226;   <a href="#cryptography.x509.name">cryptography.x509.name</a>
  &#8226;   <a href="#csv">csv</a>
+ &#8226;   <a href="#data">data</a>
  &#8226;   <a href="#dataclasses">dataclasses</a>
  &#8226;   <a href="#email._encoded_words">email._encoded_words</a>
  &#8226;   <a href="#email._header_value_parser">email._header_value_parser</a>
@@ -8909,6 +9029,7 @@ imported by:
  &#8226;   <a href="#json.decoder">json.decoder</a>
  &#8226;   <a href="#json.encoder">json.encoder</a>
  &#8226;   <a href="#json.scanner">json.scanner</a>
+ &#8226;   <a href="#lang.l18n">lang.l18n</a>
  &#8226;   <a href="#locale">locale</a>
  &#8226;   <a href="#logging">logging</a>
  &#8226;   <a href="#main.py">main.py</a>
@@ -8937,6 +9058,7 @@ imported by:
  &#8226;   <a href="#tkinter">tkinter</a>
  &#8226;   <a href="#tokenize">tokenize</a>
  &#8226;   <a href="#typing">typing</a>
+ &#8226;   <a href="#ui.detail">ui.detail</a>
  &#8226;   <a href="#urllib.parse">urllib.parse</a>
  &#8226;   <a href="#urllib.request">urllib.request</a>
  &#8226;   <a href="#urllib3.connection">urllib3.connection</a>
@@ -8946,6 +9068,9 @@ imported by:
  &#8226;   <a href="#urllib3.util.ssl_match_hostname">urllib3.util.ssl_match_hostname</a>
  &#8226;   <a href="#urllib3.util.url">urllib3.util.url</a>
  &#8226;   <a href="#warnings">warnings</a>
+ &#8226;   <a href="#yaml.constructor">yaml.constructor</a>
+ &#8226;   <a href="#yaml.reader">yaml.reader</a>
+ &#8226;   <a href="#yaml.resolver">yaml.resolver</a>
 
   </div>
 
@@ -9083,7 +9208,7 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#main.py">main.py</a>
+    <a href="#data">data</a>
  &#8226;   <a href="#requests">requests</a>
  &#8226;   <a href="#requests.__version__">requests.__version__</a>
  &#8226;   <a href="#requests._internal_utils">requests._internal_utils</a>
@@ -10185,6 +10310,7 @@ imported by:
  &#8226;   <a href="#importlib.metadata">importlib.metadata</a>
  &#8226;   <a href="#importlib.util">importlib.util</a>
  &#8226;   <a href="#inspect">inspect</a>
+ &#8226;   <a href="#lang.l18n">lang.l18n</a>
  &#8226;   <a href="#linecache">linecache</a>
  &#8226;   <a href="#locale">locale</a>
  &#8226;   <a href="#logging">logging</a>
@@ -10237,6 +10363,7 @@ imported by:
  &#8226;   <a href="#warnings">warnings</a>
  &#8226;   <a href="#weakref">weakref</a>
  &#8226;   <a href="#webbrowser">webbrowser</a>
+ &#8226;   <a href="#yaml.constructor">yaml.constructor</a>
  &#8226;   <a href="#zipfile">zipfile</a>
 
   </div>
@@ -10366,6 +10493,7 @@ imported by:
  &#8226;   <a href="#requests.auth">requests.auth</a>
  &#8226;   <a href="#requests.cookies">requests.cookies</a>
  &#8226;   <a href="#subprocess">subprocess</a>
+ &#8226;   <a href="#ui.settings">ui.settings</a>
  &#8226;   <a href="#urllib3._collections">urllib3._collections</a>
  &#8226;   <a href="#webbrowser">webbrowser</a>
  &#8226;   <a href="#zipfile">zipfile</a>
@@ -10394,7 +10522,6 @@ imported by:
  &#8226;   <a href="#http.cookiejar">http.cookiejar</a>
  &#8226;   <a href="#http.cookies">http.cookies</a>
  &#8226;   <a href="#logging">logging</a>
- &#8226;   <a href="#main.py">main.py</a>
  &#8226;   <a href="#pprint">pprint</a>
  &#8226;   <a href="#queue">queue</a>
  &#8226;   <a href="#random">random</a>
@@ -10428,7 +10555,6 @@ imports:
  &#8226;   <a href="#re">re</a>
  &#8226;   <a href="#sys">sys</a>
  &#8226;   <a href="#tkinter.constants">tkinter.constants</a>
- &#8226;   <a href="#tkinter.font">tkinter.font</a>
  &#8226;   <a href="#tkinter.ttk">tkinter.ttk</a>
  &#8226;   <a href="#traceback">traceback</a>
  &#8226;   <a href="#types">types</a>
@@ -10438,8 +10564,11 @@ imports:
 imported by:
     <a href="#main.py">main.py</a>
  &#8226;   <a href="#tkinter.constants">tkinter.constants</a>
- &#8226;   <a href="#tkinter.font">tkinter.font</a>
  &#8226;   <a href="#tkinter.ttk">tkinter.ttk</a>
+ &#8226;   <a href="#ui.changes">ui.changes</a>
+ &#8226;   <a href="#ui.detail">ui.detail</a>
+ &#8226;   <a href="#ui.settings">ui.settings</a>
+ &#8226;   <a href="#ui.table">ui.table</a>
 
   </div>
 
@@ -10462,24 +10591,6 @@ imported by:
 </div>
 
 <div class="node">
-  <a name="tkinter.font"></a>
-  <a target="code" href="///C:/Users/matis/AppData/Local/Programs/Python/Python311/Lib/tkinter/font.py" type="text/plain"><tt>tkinter.font</tt></a>
-<span class="moduletype">SourceModule</span>  <div class="import">
-imports:
-    <a href="#itertools">itertools</a>
- &#8226;   <a href="#tkinter">tkinter</a>
-
-  </div>
-  <div class="import">
-imported by:
-    <a href="#main.py">main.py</a>
- &#8226;   <a href="#tkinter">tkinter</a>
-
-  </div>
-
-</div>
-
-<div class="node">
   <a name="tkinter.ttk"></a>
   <a target="code" href="///C:/Users/matis/AppData/Local/Programs/Python/Python311/Lib/tkinter/ttk.py" type="text/plain"><tt>tkinter.ttk</tt></a>
 <span class="moduletype">SourceModule</span>  <div class="import">
@@ -10491,6 +10602,9 @@ imports:
 imported by:
     <a href="#main.py">main.py</a>
  &#8226;   <a href="#tkinter">tkinter</a>
+ &#8226;   <a href="#ui.changes">ui.changes</a>
+ &#8226;   <a href="#ui.settings">ui.settings</a>
+ &#8226;   <a href="#ui.table">ui.table</a>
 
   </div>
 
@@ -10630,6 +10744,8 @@ imported by:
  &#8226;   <a href="#typing">typing</a>
  &#8226;   <a href="#urllib.parse">urllib.parse</a>
  &#8226;   <a href="#urllib3.packages.six">urllib3.packages.six</a>
+ &#8226;   <a href="#yaml.constructor">yaml.constructor</a>
+ &#8226;   <a href="#yaml.representer">yaml.representer</a>
 
   </div>
 
@@ -10695,10 +10811,114 @@ imported by:
 </div>
 
 <div class="node">
+  <a name="ui"></a>
+  <a target="code" href="-" type="text/plain"><tt>ui</tt></a>
+<span class="moduletype">NamespacePackage</span>  <div class="import">
+imported by:
+    <a href="#ui.changes">ui.changes</a>
+ &#8226;   <a href="#ui.detail">ui.detail</a>
+ &#8226;   <a href="#ui.settings">ui.settings</a>
+ &#8226;   <a href="#ui.table">ui.table</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="ui.changes"></a>
+  <a target="code" href="///C:/Users/matis/Documents/GitHub/ArchipelagoGameTracker/ui/changes.py" type="text/plain"><tt>ui.changes</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#config">config</a>
+ &#8226;   <a href="#lang.l18n">lang.l18n</a>
+ &#8226;   <a href="#tkinter">tkinter</a>
+ &#8226;   <a href="#tkinter.ttk">tkinter.ttk</a>
+ &#8226;   <a href="#ui">ui</a>
+ &#8226;   <a href="#webbrowser">webbrowser</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#main.py">main.py</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="ui.detail"></a>
+  <a target="code" href="///C:/Users/matis/Documents/GitHub/ArchipelagoGameTracker/ui/detail.py" type="text/plain"><tt>ui.detail</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#config">config</a>
+ &#8226;   <a href="#data">data</a>
+ &#8226;   <a href="#lang.l18n">lang.l18n</a>
+ &#8226;   <a href="#re">re</a>
+ &#8226;   <a href="#tkinter">tkinter</a>
+ &#8226;   <a href="#ui">ui</a>
+ &#8226;   <a href="#urllib.parse">urllib.parse</a>
+ &#8226;   <a href="#webbrowser">webbrowser</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#main.py">main.py</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="ui.settings"></a>
+  <a target="code" href="///C:/Users/matis/Documents/GitHub/ArchipelagoGameTracker/ui/settings.py" type="text/plain"><tt>ui.settings</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#cache">cache</a>
+ &#8226;   <a href="#config">config</a>
+ &#8226;   <a href="#data">data</a>
+ &#8226;   <a href="#lang.l18n">lang.l18n</a>
+ &#8226;   <a href="#threading">threading</a>
+ &#8226;   <a href="#tkinter">tkinter</a>
+ &#8226;   <a href="#tkinter.ttk">tkinter.ttk</a>
+ &#8226;   <a href="#ui">ui</a>
+ &#8226;   <a href="#webbrowser">webbrowser</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#main.py">main.py</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="ui.table"></a>
+  <a target="code" href="///C:/Users/matis/Documents/GitHub/ArchipelagoGameTracker/ui/table.py" type="text/plain"><tt>ui.table</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#config">config</a>
+ &#8226;   <a href="#data">data</a>
+ &#8226;   <a href="#lang.l18n">lang.l18n</a>
+ &#8226;   <a href="#tkinter">tkinter</a>
+ &#8226;   <a href="#tkinter.ttk">tkinter.ttk</a>
+ &#8226;   <a href="#ui">ui</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#main.py">main.py</a>
+
+  </div>
+
+</div>
+
+<div class="node">
   <a name="unicodedata"></a>
   <tt>unicodedata</tt> <span class="moduletype"><tt>C:\Users\matis\AppData\Local\Programs\Python\Python311\DLLs\unicodedata.pyd</tt></span>  <div class="import">
 imported by:
     <a href="#charset_normalizer.utils">charset_normalizer.utils</a>
+ &#8226;   <a href="#data">data</a>
  &#8226;   <a href="#encodings.idna">encodings.idna</a>
  &#8226;   <a href="#idna.core">idna.core</a>
  &#8226;   <a href="#re._parser">re._parser</a>
@@ -10782,6 +11002,7 @@ imported by:
  &#8226;   <a href="#nturl2path">nturl2path</a>
  &#8226;   <a href="#pathlib">pathlib</a>
  &#8226;   <a href="#requests.compat">requests.compat</a>
+ &#8226;   <a href="#ui.detail">ui.detail</a>
  &#8226;   <a href="#urllib.request">urllib.request</a>
  &#8226;   <a href="#urllib.robotparser">urllib.robotparser</a>
 
@@ -11958,7 +12179,9 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#main.py">main.py</a>
+    <a href="#ui.changes">ui.changes</a>
+ &#8226;   <a href="#ui.detail">ui.detail</a>
+ &#8226;   <a href="#ui.settings">ui.settings</a>
 
   </div>
 
@@ -11983,6 +12206,394 @@ imported by:
  &#8226;   <a href="#mimetypes">mimetypes</a>
  &#8226;   <a href="#requests.utils">requests.utils</a>
  &#8226;   <a href="#urllib.request">urllib.request</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="yaml"></a>
+  <a target="code" href="///C:/Users/matis/AppData/Local/Programs/Python/Python311/Lib/site-packages/yaml/__init__.py" type="text/plain"><tt>yaml</tt></a>
+<span class="moduletype">Package</span>  <div class="import">
+imports:
+    <a href="#io">io</a>
+ &#8226;   <a href="#yaml.cyaml">yaml.cyaml</a>
+ &#8226;   <a href="#yaml.dumper">yaml.dumper</a>
+ &#8226;   <a href="#yaml.error">yaml.error</a>
+ &#8226;   <a href="#yaml.events">yaml.events</a>
+ &#8226;   <a href="#yaml.loader">yaml.loader</a>
+ &#8226;   <a href="#yaml.nodes">yaml.nodes</a>
+ &#8226;   <a href="#yaml.tokens">yaml.tokens</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#lang.l18n">lang.l18n</a>
+ &#8226;   <a href="#yaml._yaml">yaml._yaml</a>
+ &#8226;   <a href="#yaml.composer">yaml.composer</a>
+ &#8226;   <a href="#yaml.constructor">yaml.constructor</a>
+ &#8226;   <a href="#yaml.cyaml">yaml.cyaml</a>
+ &#8226;   <a href="#yaml.dumper">yaml.dumper</a>
+ &#8226;   <a href="#yaml.emitter">yaml.emitter</a>
+ &#8226;   <a href="#yaml.error">yaml.error</a>
+ &#8226;   <a href="#yaml.events">yaml.events</a>
+ &#8226;   <a href="#yaml.loader">yaml.loader</a>
+ &#8226;   <a href="#yaml.nodes">yaml.nodes</a>
+ &#8226;   <a href="#yaml.parser">yaml.parser</a>
+ &#8226;   <a href="#yaml.reader">yaml.reader</a>
+ &#8226;   <a href="#yaml.representer">yaml.representer</a>
+ &#8226;   <a href="#yaml.resolver">yaml.resolver</a>
+ &#8226;   <a href="#yaml.scanner">yaml.scanner</a>
+ &#8226;   <a href="#yaml.serializer">yaml.serializer</a>
+ &#8226;   <a href="#yaml.tokens">yaml.tokens</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="yaml._yaml"></a>
+  <tt>yaml._yaml</tt> <span class="moduletype"><tt>C:\Users\matis\AppData\Local\Programs\Python\Python311\Lib\site-packages\yaml\_yaml.cp311-win_amd64.pyd</tt></span>  <div class="import">
+imports:
+    <a href="#yaml">yaml</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#yaml.cyaml">yaml.cyaml</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="yaml.composer"></a>
+  <a target="code" href="///C:/Users/matis/AppData/Local/Programs/Python/Python311/Lib/site-packages/yaml/composer.py" type="text/plain"><tt>yaml.composer</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#yaml">yaml</a>
+ &#8226;   <a href="#yaml.error">yaml.error</a>
+ &#8226;   <a href="#yaml.events">yaml.events</a>
+ &#8226;   <a href="#yaml.nodes">yaml.nodes</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#yaml.loader">yaml.loader</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="yaml.constructor"></a>
+  <a target="code" href="///C:/Users/matis/AppData/Local/Programs/Python/Python311/Lib/site-packages/yaml/constructor.py" type="text/plain"><tt>yaml.constructor</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#base64">base64</a>
+ &#8226;   <a href="#binascii">binascii</a>
+ &#8226;   <a href="#collections.abc">collections.abc</a>
+ &#8226;   <a href="#datetime">datetime</a>
+ &#8226;   <a href="#re">re</a>
+ &#8226;   <a href="#sys">sys</a>
+ &#8226;   <a href="#types">types</a>
+ &#8226;   <a href="#yaml">yaml</a>
+ &#8226;   <a href="#yaml.error">yaml.error</a>
+ &#8226;   <a href="#yaml.nodes">yaml.nodes</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#yaml.cyaml">yaml.cyaml</a>
+ &#8226;   <a href="#yaml.loader">yaml.loader</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="yaml.cyaml"></a>
+  <a target="code" href="///C:/Users/matis/AppData/Local/Programs/Python/Python311/Lib/site-packages/yaml/cyaml.py" type="text/plain"><tt>yaml.cyaml</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#yaml">yaml</a>
+ &#8226;   <a href="#yaml._yaml">yaml._yaml</a>
+ &#8226;   <a href="#yaml.constructor">yaml.constructor</a>
+ &#8226;   <a href="#yaml.representer">yaml.representer</a>
+ &#8226;   <a href="#yaml.resolver">yaml.resolver</a>
+ &#8226;   <a href="#yaml.serializer">yaml.serializer</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#yaml">yaml</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="yaml.dumper"></a>
+  <a target="code" href="///C:/Users/matis/AppData/Local/Programs/Python/Python311/Lib/site-packages/yaml/dumper.py" type="text/plain"><tt>yaml.dumper</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#yaml">yaml</a>
+ &#8226;   <a href="#yaml.emitter">yaml.emitter</a>
+ &#8226;   <a href="#yaml.representer">yaml.representer</a>
+ &#8226;   <a href="#yaml.resolver">yaml.resolver</a>
+ &#8226;   <a href="#yaml.serializer">yaml.serializer</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#yaml">yaml</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="yaml.emitter"></a>
+  <a target="code" href="///C:/Users/matis/AppData/Local/Programs/Python/Python311/Lib/site-packages/yaml/emitter.py" type="text/plain"><tt>yaml.emitter</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#yaml">yaml</a>
+ &#8226;   <a href="#yaml.error">yaml.error</a>
+ &#8226;   <a href="#yaml.events">yaml.events</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#yaml.dumper">yaml.dumper</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="yaml.error"></a>
+  <a target="code" href="///C:/Users/matis/AppData/Local/Programs/Python/Python311/Lib/site-packages/yaml/error.py" type="text/plain"><tt>yaml.error</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#yaml">yaml</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#yaml">yaml</a>
+ &#8226;   <a href="#yaml.composer">yaml.composer</a>
+ &#8226;   <a href="#yaml.constructor">yaml.constructor</a>
+ &#8226;   <a href="#yaml.emitter">yaml.emitter</a>
+ &#8226;   <a href="#yaml.parser">yaml.parser</a>
+ &#8226;   <a href="#yaml.reader">yaml.reader</a>
+ &#8226;   <a href="#yaml.representer">yaml.representer</a>
+ &#8226;   <a href="#yaml.resolver">yaml.resolver</a>
+ &#8226;   <a href="#yaml.scanner">yaml.scanner</a>
+ &#8226;   <a href="#yaml.serializer">yaml.serializer</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="yaml.events"></a>
+  <a target="code" href="///C:/Users/matis/AppData/Local/Programs/Python/Python311/Lib/site-packages/yaml/events.py" type="text/plain"><tt>yaml.events</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#yaml">yaml</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#yaml">yaml</a>
+ &#8226;   <a href="#yaml.composer">yaml.composer</a>
+ &#8226;   <a href="#yaml.emitter">yaml.emitter</a>
+ &#8226;   <a href="#yaml.parser">yaml.parser</a>
+ &#8226;   <a href="#yaml.serializer">yaml.serializer</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="yaml.loader"></a>
+  <a target="code" href="///C:/Users/matis/AppData/Local/Programs/Python/Python311/Lib/site-packages/yaml/loader.py" type="text/plain"><tt>yaml.loader</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#yaml">yaml</a>
+ &#8226;   <a href="#yaml.composer">yaml.composer</a>
+ &#8226;   <a href="#yaml.constructor">yaml.constructor</a>
+ &#8226;   <a href="#yaml.parser">yaml.parser</a>
+ &#8226;   <a href="#yaml.reader">yaml.reader</a>
+ &#8226;   <a href="#yaml.resolver">yaml.resolver</a>
+ &#8226;   <a href="#yaml.scanner">yaml.scanner</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#yaml">yaml</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="yaml.nodes"></a>
+  <a target="code" href="///C:/Users/matis/AppData/Local/Programs/Python/Python311/Lib/site-packages/yaml/nodes.py" type="text/plain"><tt>yaml.nodes</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#yaml">yaml</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#yaml">yaml</a>
+ &#8226;   <a href="#yaml.composer">yaml.composer</a>
+ &#8226;   <a href="#yaml.constructor">yaml.constructor</a>
+ &#8226;   <a href="#yaml.representer">yaml.representer</a>
+ &#8226;   <a href="#yaml.resolver">yaml.resolver</a>
+ &#8226;   <a href="#yaml.serializer">yaml.serializer</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="yaml.parser"></a>
+  <a target="code" href="///C:/Users/matis/AppData/Local/Programs/Python/Python311/Lib/site-packages/yaml/parser.py" type="text/plain"><tt>yaml.parser</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#yaml">yaml</a>
+ &#8226;   <a href="#yaml.error">yaml.error</a>
+ &#8226;   <a href="#yaml.events">yaml.events</a>
+ &#8226;   <a href="#yaml.scanner">yaml.scanner</a>
+ &#8226;   <a href="#yaml.tokens">yaml.tokens</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#yaml.loader">yaml.loader</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="yaml.reader"></a>
+  <a target="code" href="///C:/Users/matis/AppData/Local/Programs/Python/Python311/Lib/site-packages/yaml/reader.py" type="text/plain"><tt>yaml.reader</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#codecs">codecs</a>
+ &#8226;   <a href="#re">re</a>
+ &#8226;   <a href="#yaml">yaml</a>
+ &#8226;   <a href="#yaml.error">yaml.error</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#yaml.loader">yaml.loader</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="yaml.representer"></a>
+  <a target="code" href="///C:/Users/matis/AppData/Local/Programs/Python/Python311/Lib/site-packages/yaml/representer.py" type="text/plain"><tt>yaml.representer</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#base64">base64</a>
+ &#8226;   <a href="#collections">collections</a>
+ &#8226;   <a href="#copyreg">copyreg</a>
+ &#8226;   <a href="#datetime">datetime</a>
+ &#8226;   <a href="#types">types</a>
+ &#8226;   <a href="#yaml">yaml</a>
+ &#8226;   <a href="#yaml.error">yaml.error</a>
+ &#8226;   <a href="#yaml.nodes">yaml.nodes</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#yaml.cyaml">yaml.cyaml</a>
+ &#8226;   <a href="#yaml.dumper">yaml.dumper</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="yaml.resolver"></a>
+  <a target="code" href="///C:/Users/matis/AppData/Local/Programs/Python/Python311/Lib/site-packages/yaml/resolver.py" type="text/plain"><tt>yaml.resolver</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#re">re</a>
+ &#8226;   <a href="#yaml">yaml</a>
+ &#8226;   <a href="#yaml.error">yaml.error</a>
+ &#8226;   <a href="#yaml.nodes">yaml.nodes</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#yaml.cyaml">yaml.cyaml</a>
+ &#8226;   <a href="#yaml.dumper">yaml.dumper</a>
+ &#8226;   <a href="#yaml.loader">yaml.loader</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="yaml.scanner"></a>
+  <a target="code" href="///C:/Users/matis/AppData/Local/Programs/Python/Python311/Lib/site-packages/yaml/scanner.py" type="text/plain"><tt>yaml.scanner</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#yaml">yaml</a>
+ &#8226;   <a href="#yaml.error">yaml.error</a>
+ &#8226;   <a href="#yaml.tokens">yaml.tokens</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#yaml.loader">yaml.loader</a>
+ &#8226;   <a href="#yaml.parser">yaml.parser</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="yaml.serializer"></a>
+  <a target="code" href="///C:/Users/matis/AppData/Local/Programs/Python/Python311/Lib/site-packages/yaml/serializer.py" type="text/plain"><tt>yaml.serializer</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#yaml">yaml</a>
+ &#8226;   <a href="#yaml.error">yaml.error</a>
+ &#8226;   <a href="#yaml.events">yaml.events</a>
+ &#8226;   <a href="#yaml.nodes">yaml.nodes</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#yaml.cyaml">yaml.cyaml</a>
+ &#8226;   <a href="#yaml.dumper">yaml.dumper</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="yaml.tokens"></a>
+  <a target="code" href="///C:/Users/matis/AppData/Local/Programs/Python/Python311/Lib/site-packages/yaml/tokens.py" type="text/plain"><tt>yaml.tokens</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#yaml">yaml</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#yaml">yaml</a>
+ &#8226;   <a href="#yaml.parser">yaml.parser</a>
+ &#8226;   <a href="#yaml.scanner">yaml.scanner</a>
 
   </div>
 

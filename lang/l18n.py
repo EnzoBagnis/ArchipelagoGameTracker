@@ -11,6 +11,7 @@ Usage :
 
 import os
 import re
+import sys
 
 # PyYAML est la seule dépendance externe.
 # Si absent, on tombe sur le parser minimaliste intégré ci-dessous.
@@ -58,7 +59,14 @@ except ImportError:
 
 
 # ── Internal state ─────────────────────────────────────────────────────────────
-_LOCALES_DIR = os.path.dirname(__file__)
+# Determine where the locale files are located. When running from a
+# PyInstaller bundle the files are extracted to sys._MEIPASS, so we need to
+# take that into account; otherwise we resolve relative to this module file.
+if getattr(sys, "frozen", False):
+    _LOCALES_DIR = os.path.join(sys._MEIPASS, "lang")
+else:
+    _LOCALES_DIR = os.path.dirname(__file__)
+
 _strings: dict = {}
 _lang_code: str = "fr"
 

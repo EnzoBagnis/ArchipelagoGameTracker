@@ -8,7 +8,7 @@ a = Analysis(
     ['c:\\Users\\matis\\Documents\\GitHub\\ArchipelagoGameTracker\\main.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[('c:\\Users\\matis\\Documents\\GitHub\\ArchipelagoGameTracker\\lang', 'lang')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
