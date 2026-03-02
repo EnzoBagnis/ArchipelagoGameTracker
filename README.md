@@ -68,3 +68,16 @@ Les données proviennent du [Google Sheets communautaire Archipelago](https://do
 ---
 
 *Made for the [Archipelago Multiworld Randomizer](https://archipelago.gg) community.*
+
+## Ce qui est prévu pour la suite
+
+Ajout de la possibilité d'annuler une update en cours de route
+Rendre la flèche de 'latest changes' utile (utilité actuelle très trivial)
+Ajout d'un historique des changements pour les 10 dernières updates
+Positionner le bouton paramètre à droite du titre et non coller au bouton update
+Rajouter les Yes, No du tableau dans les lang files
+Dans la page paramètre, faire des retour à la ligne automatique lorsque le texte dépasse de la fenêtre
+Créer un logo
+Dans la page paramètre, faire en sorte que la case contenant les steam IDs s'affiche en entier
+Pour la page paramètre, définir une hauteur maximal (par défaut)
+Pour la page paramètre, permettre de la resize
