@@ -5,7 +5,7 @@ from config import (
     TABS, STATUS_COLORS, STATUS_ORDER, SORT_ICONS,
     BG, BG3, ACCENT, ACCENT2, TEXT, TEXT_DIM, BORDER, GREEN, RED
 )
-from data import match_poptracker, _normalize_steam
+from data import match_poptracker, is_owned_on_steam
 from lang.l18n import t
 
 
@@ -206,7 +206,7 @@ def refresh_table(tree, app):
         status   = data.get("status", "")
         notes    = data.get("notes",  "")
         has_pt   = match_poptracker(name, app._poptracker_set)
-        is_owned = _normalize_steam(name) in app._steam_owned
+        is_owned = is_owned_on_steam(name, app._steam_owned)
 
         if query and query not in name.lower() \
                  and query not in status.lower() \

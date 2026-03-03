@@ -219,6 +219,7 @@ class ArchipelagoTracker(tk.Tk):
             self._all_games      = cache
             self._poptracker_set = set(cache.get("_poptracker", []))
             self._releases       = cache.get("_releases", {})
+            #self._steam_owned    = set(cache.get("_steam_owned", []))
             self._steam_owned    = set(cache.get("_steam_owned", []))
             self._refresh_table()
             ts = cache.get("_timestamp", "")

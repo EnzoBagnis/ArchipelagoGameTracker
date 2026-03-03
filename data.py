@@ -159,14 +159,39 @@ def match_poptracker(game_name, poptracker_set):
 
 # ── Steam ──────────────────────────────────────────────────────────────────────
 
-def _normalize_steam(name: str) -> str:
-    name = name.lower()
-    name = re.sub(r"[^a-z0-9 ]", "", name)
-    return name
+def _extract_acronym(name: str) -> str | None:
+    """'Totally Accurate Battle Simulator (TABS)' -> 'tabs'"""
+    match = re.search(r'\(([A-Z]{2,})\)', name)
+    return match.group(1).lower() if match else None
+
+def _build_acronym(name: str) -> str:
+    """'Totally Accurate Battle Simulator' -> 'tabs'"""
+    STOP = {"a", "an", "the", "of", "vs", "vs.", "and", "&", "in", "on", "at", "to", "for"}
+    clean = re.sub(r"[^a-zA-Z0-9 ]", " ", name)
+    words = clean.split()
+    return "".join(w[0] for w in words if w.lower() not in STOP).lower()
+
+def _normalize_steam(name: str) -> set[str]:
+    """Retourne un set de variantes normalisées."""
+    # Nom de base sans parenthèses
+    clean = re.sub(r'\s*\(.*?\)', '', name).strip()
+    base = re.sub(r"[^a-z0-9 ]", "", clean.lower())
+
+    variants = {base}
+
+    # Acronyme explicite: "Foo Bar (FB)" -> "fb"
+    explicit = _extract_acronym(name)
+    if explicit:
+        variants.add(explicit)
+
+    # Acronyme généré depuis le nom nettoyé: "Totally Accurate Battle Simulator" -> "tabs"
+    variants.add(_build_acronym(clean))
+
+    return variants
 
 
 def fetch_steam_owned(api_key, steam_ids):
-    """Return set of normalized game names owned across all given Steam IDs."""
+    """Return dict of {frozenset_of_variants: original_name} owned across all given Steam IDs."""
     owned = {}
     headers = {"User-Agent": "ArchipelagoTracker/1.0"}
     for sid in steam_ids:
@@ -186,4 +211,19 @@ def fetch_steam_owned(api_key, steam_ids):
                     owned[appid] = game.get("name", "")
         except Exception:
             continue
-    return {_normalize_steam(n) for n in owned.values() if n}
+
+    # Construit un set "à plat" de toutes les variantes -> pour lookup rapide
+    all_variants: set[str] = set()
+    variant_map: dict[str, str] = {}  # variante -> nom original (optionnel, pour debug)
+    for name in owned.values():
+        if name:
+            for v in _normalize_steam(name):
+                all_variants.add(v)
+                variant_map[v] = name
+
+    return all_variants
+
+
+def is_owned_on_steam(sheet_name: str, steam_variants: set[str]) -> bool:
+    """Vérifie si un jeu du sheet est dans les variantes Steam."""
+    return bool(_normalize_steam(sheet_name) & steam_variants)
