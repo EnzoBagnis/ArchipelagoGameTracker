@@ -100,5 +100,29 @@ def build():
     subprocess.check_call(cmd, cwd=script_dir)
     print(f"\n✅ Terminé ! → dist/{target_name}.exe")
 
+    # ── Inno Setup installer (optional) ──────────────────────────────────
+    iss_file = os.path.join(script_dir, "installer.iss")
+    if os.path.exists(iss_file):
+        build_installer = input("\n📦 Générer l'installeur (Inno Setup) ? [o/N] : ").strip().lower()
+        if build_installer in ("o", "oui", "y", "yes"):
+            # Try common Inno Setup paths
+            iscc_paths = [
+                r"C:\Program Files (x86)\Inno Setup 6\ISCC.exe",
+                r"C:\Program Files\Inno Setup 6\ISCC.exe",
+                shutil.which("ISCC") or "",
+            ]
+            iscc = next((p for p in iscc_paths if p and os.path.isfile(p)), None)
+            if iscc:
+                print(" Compilation de l'installeur...")
+                try:
+                    subprocess.check_call([iscc, iss_file], cwd=script_dir)
+                    print("\n✅ Installeur créé ! → dist/ArchipelagoTrackerSetup.exe")
+                except subprocess.CalledProcessError:
+                    print("\n❌ Erreur lors de la compilation de l'installeur Inno Setup.")
+                    print("   Vérifiez les messages ci-dessus pour plus de détails.")
+            else:
+                print("⚠️  Inno Setup non trouvé. Installez-le depuis https://jrsoftware.org/isinfo.php")
+                print(f"   Puis compilez manuellement : ISCC.exe \"{iss_file}\"")
+
 if __name__ == "__main__":
     build()
