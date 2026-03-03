@@ -19,3 +19,6 @@ settings.json
 # OS
 Thumbs.db
 .DS_Store
+/build
+/build/main
+main.spec
