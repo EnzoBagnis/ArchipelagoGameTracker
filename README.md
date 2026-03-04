@@ -112,16 +112,16 @@ previously: Archipelago Game Tracker
 
 ## Planned Features
 
-- Add the ability to cancel an update in progress
+- Done | Add the ability to cancel an update in progress
 - Make the 'latest changes' arrow useful (current utility is very trivial)
 - Add a change history for the last 10 updates
-- Move the settings button to the right of the title instead of next to the update button
-- Add Yes/No values to the lang files
-- In the settings page, add automatic line wrapping when text overflows the window
-- In the settings page, make the Steam IDs input box display fully
-- For the settings page, define a maximum default height
-- For the settings page, allow resizing
-- Add the option to enter game owned manually
+- Done | Move the settings button to the right of the title instead of next to the update button
+- Done | Add Yes/No values to the lang files
+- Done | In the settings page, add automatic line wrapping when text overflows the window
+- Done | In the settings page, make the Steam IDs input box display fully
+- Done | For the settings page, define a maximum default height
+- Done | For the settings page, allow resizing
+- Done | Add the option to enter game owned manually
 - Dectect game from other platform (Itch.io, epic)
 </details>
 
@@ -239,16 +239,16 @@ précedement : Archipelago Game Tracker
 
 ## Ce qui est prévu pour la suite
 
-- Ajout de la possibilité d'annuler une update en cours de route
+- Fait | Ajout de la possibilité d'annuler une update en cours de route
 - Rendre la flèche de 'latest changes' utile (utilité actuelle très triviale)
 - Ajout d'un historique des changements pour les 10 dernières updates
-- Positionner le bouton paramètre à droite du titre et non collé au bouton update
-- Rajouter les Yes, No du tableau dans les lang files
-- Dans la page paramètre, faire des retours à la ligne automatiques lorsque le texte dépasse de la fenêtre
-- Dans la page paramètre, faire en sorte que la case contenant les Steam IDs s'affiche en entier
-- Pour la page paramètre, définir une hauteur maximale (par défaut)
-- Pour la page paramètre, permettre de la resize
-- Ajouter la possibilité de rentré manuellement les jeux possédés
+- Fait | Positionner le bouton paramètre à droite du titre et non collé au bouton update
+- Fait | Rajouter les Yes, No du tableau dans les lang files
+- Fait | Dans la page paramètre, faire des retours à la ligne automatiques lorsque le texte dépasse de la fenêtre
+- Fait | Dans la page paramètre, faire en sorte que la case contenant les Steam IDs s'affiche en entier
+- Fait | Pour la page paramètre, définir une hauteur maximale (par défaut)
+- Fait | Pour la page paramètre, permettre de la resize
+- Fait | Ajouter la possibilité de rentré manuellement les jeux possédés
 - Détection des jeux sur les autres platforms (Itch.io, epic)
 
 </details>
