@@ -44,6 +44,8 @@ class GameSupportTracker(tk.Tk):
         self._poptracker_set = set()
         self._releases       = {}
         self._steam_owned    = set()
+        self._itch_owned     = set()
+        self._playnite_owned = set()
         self._manual_owned   = set()   # games owned manually by the user
 
         _s = load_settings()
@@ -280,6 +282,8 @@ class GameSupportTracker(tk.Tk):
             self._poptracker_set = set(cache.get("_poptracker", []))
             self._releases       = cache.get("_releases", {})
             self._steam_owned    = set(cache.get("_steam_owned", []))
+            self._itch_owned     = set(cache.get("_itch_owned", []))
+            self._playnite_owned = set(cache.get("_playnite_owned", []))
             self._refresh_table()
             ts = cache.get("_timestamp", "")
             if ts:
@@ -408,9 +412,13 @@ class GameSupportTracker(tk.Tk):
                 self._poptracker_set     = set(cache.get("_poptracker", []))
                 new_cache["_poptracker"] = list(self._poptracker_set)
 
-        # Steam — refresh only via ⚙, keep cache
-        self._steam_owned         = set(cache.get("_steam_owned", []))
-        new_cache["_steam_owned"] = list(self._steam_owned)
+        # Steam / Itch.io / Playnite — refresh only via ⚙, keep cache
+        self._steam_owned          = set(cache.get("_steam_owned", []))
+        self._itch_owned           = set(cache.get("_itch_owned", []))
+        self._playnite_owned       = set(cache.get("_playnite_owned", []))
+        new_cache["_steam_owned"]   = list(self._steam_owned)
+        new_cache["_itch_owned"]    = list(self._itch_owned)
+        new_cache["_playnite_owned"] = list(self._playnite_owned)
 
         new_cache["_releases"] = new_releases
         self._releases         = new_releases

@@ -5,7 +5,7 @@ from config import (
     TABS, STATUS_COLORS, STATUS_ORDER, SORT_ICONS,
     BG, BG3, ACCENT, ACCENT2, TEXT, TEXT_DIM, BORDER, GREEN, RED
 )
-from data import match_poptracker, is_owned_on_steam
+from data import match_poptracker, is_owned_on_steam, is_owned_on_itch, is_owned_on_playnite
 from lang.l18n import t
 
 
@@ -274,8 +274,10 @@ def refresh_table(tree, app):
         status   = data.get("status", "")
         notes    = data.get("notes",  "")
         has_pt   = match_poptracker(name, app._poptracker_set)
-        # Owned = Steam OR manual
+        # Owned = Steam OR itch.io OR Playnite OR manual
         is_owned = (is_owned_on_steam(name, app._steam_owned)
+                    or is_owned_on_itch(name, app._itch_owned)
+                    or is_owned_on_playnite(name, app._playnite_owned)
                     or name in app._manual_owned)
         src      = source_map.get(name, "")
 

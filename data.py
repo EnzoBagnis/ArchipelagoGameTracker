@@ -234,3 +234,127 @@ def fetch_steam_owned(api_key, steam_ids):
 def is_owned_on_steam(sheet_name: str, steam_variants: set[str]) -> bool:
     """Vérifie si un jeu du sheet est dans les variantes Steam."""
     return bool(_normalize_steam(sheet_name) & steam_variants)
+
+
+# ── Itch.io ────────────────────────────────────────────────────────────────────
+# Requires an OAuth access token with the `profile:owned` scope.
+#
+# How the user gets a token (no web server needed):
+#   1. Go to https://itch.io/user/settings/oauth-apps → create an OAuth app
+#   2. Set redirect URI to:  urn:ietf:wg:oauth:2.0:oob
+#   3. Open in browser:
+#      https://itch.io/oauth/authorize
+#        ?client_id=YOUR_CLIENT_ID
+#        &scope=profile%3Aowned
+#        &response_type=token
+#        &redirect_uri=urn%3Aietf%3Awg%3Aoauth%3A2.0%3Aoob
+#   4. Authorize → itch.io shows the token on-screen → user copies it here.
+
+ITCH_OWNED_URL = "https://api.itch.io/profile/owned-keys"
+
+
+def fetch_itch_owned(token: str) -> tuple[set[str] | None, int]:
+    """
+    Return (variants_set, total_count) for all games owned on itch.io.
+    Returns (None, 0) on error (bad token, network failure).
+    Returns (set(), 0) on success with an empty library.
+    """
+    if not token:
+        return None, 0
+
+    headers = {
+        "User-Agent":    "GameSupportTracker/1.0",
+        "Authorization": f"Bearer {token}",
+    }
+
+    owned_names: list[str] = []
+    page = 1
+
+    while True:
+        try:
+            r = requests.get(
+                ITCH_OWNED_URL,
+                params={"page": page},
+                headers=headers,
+                timeout=15,
+            )
+        except Exception:
+            return None, 0
+
+        if r.status_code != 200:
+            break
+
+        data = r.json()
+        keys = data.get("owned_keys", [])
+        # itch.io returns {} (empty dict) when there are no results,
+        # and either a list or dict with int keys when there are games.
+        if isinstance(keys, dict):
+            keys = list(keys.values())
+        if not keys:
+            break
+
+        for entry in keys:
+            game = entry.get("game") or {}
+            name = game.get("title", "").strip()
+            if name:
+                owned_names.append(name)
+
+        # itch.io paginates in chunks of 50; stop when we get a short page
+        if len(keys) < 50:
+            break
+        page += 1
+
+    all_variants: set[str] = set()
+    for name in owned_names:
+        all_variants.update(_normalize_steam(name))   # reuse same normaliser
+
+    return all_variants, len(owned_names)
+
+
+def is_owned_on_itch(sheet_name: str, itch_variants: set[str]) -> bool:
+    return bool(_normalize_steam(sheet_name) & itch_variants)
+
+
+# ── Playnite ───────────────────────────────────────────────────────────────────
+# Playnite can export the full library as a JSON file.
+# How the user exports:
+#   Main menu → Library → Export Library…  (Playnite 10+)
+#   Or via the built-in script:  Start-Process playnite://playnite/exportlibrary
+#
+# The exported JSON is a list of game objects; the fields we care about are:
+#   "Name"        – display name  (always present)
+#   "Source"      – e.g. "Steam", "GOG", "Epic Games", "itch.io", "Xbox"
+#   "IsInstalled" – bool (we index everything, installed or not)
+
+def load_playnite_library(path: str) -> tuple[set[str], int]:
+    """
+    Parse a Playnite JSON export and return (variants_set, total_count).
+    variants_set is compatible with is_owned_on_steam() / is_owned_on_itch().
+    Returns (set(), 0) if the file can't be read or is malformed.
+    """
+    import json
+
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            games: list[dict] = json.load(f)
+    except Exception:
+        return set(), 0
+
+    if not isinstance(games, list):
+        return set(), 0
+
+    all_variants: set[str] = set()
+    count = 0
+
+    for game in games:
+        name = (game.get("Name") or "").strip()
+        if not name:
+            continue
+        all_variants.update(_normalize_steam(name))
+        count += 1
+
+    return all_variants, count
+
+
+def is_owned_on_playnite(sheet_name: str, playnite_variants: set[str]) -> bool:
+    return bool(_normalize_steam(sheet_name) & playnite_variants)
