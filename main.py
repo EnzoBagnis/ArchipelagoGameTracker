@@ -10,7 +10,7 @@ from config import (
 )
 from cache import load_cache, save_cache, load_settings
 from data import (
-    fetch_tab, rows_to_dict, extract_github_repo,
+    fetch_tab, fetch_tab_with_links, rows_to_dict, extract_github_repo,
     fetch_github_release, fetch_poptracker_games,
     load_alias_table,
 )
@@ -287,9 +287,10 @@ class GameSupportTracker(tk.Tk):
             game_data = self._all_games.get(tab, {}).get(name, {})
         notes   = game_data.get("notes", "")  if isinstance(game_data, dict) else ""
         apworld = game_data.get("apworld", "") if isinstance(game_data, dict) else ""
+        links   = game_data.get("links",   []) if isinstance(game_data, dict) else []
         update_detail(self._detail_widgets, name, status, notes,
                       tab, self._releases, self._poptracker_set,
-                      apworld=apworld)
+                      apworld=apworld, links=links)
 
     # ── Initial load ───────────────────────────────────────────────────────────
     def _load_initial(self):
@@ -345,14 +346,31 @@ class GameSupportTracker(tk.Tk):
             if self._cancel_flag.is_set():
                 break
             self._set_status(t("status_fetching_tab", tab=tab_name))
-            rows = fetch_tab(tab_name, gid)
-            if not rows:
+
+            # ── Fetch with hyperlinks (HTML path) ─────────────────────────────
+            row_dicts = fetch_tab_with_links(tab_name, gid)
+
+            if not row_dicts:
                 new_cache[tab_name]    = cache.get(tab_name, {})
                 new_releases[tab_name] = old_releases.get(tab_name, {})
                 continue
 
-            current = rows_to_dict(rows, tab_name)
-            old     = cache.get(tab_name, {})
+            # Convert row_dicts → current dict keyed by game name
+            current = {}
+            for rd in row_dicts:
+                name = rd["name"]
+                if not name:
+                    continue
+                current[name] = {
+                    "status": rd["status"],
+                    "notes":  rd["notes"],
+                    "apworld": "",          # kept for legacy compat
+                    "links":  rd["links"],  # list of {label, url}
+                    "pr":     rd.get("pr", ""),
+                    "mature": rd.get("mature", False),
+                }
+
+            old = cache.get(tab_name, {})
             if isinstance(old, dict) and "_timestamp" in old:
                 old = {}
 
@@ -391,7 +409,9 @@ class GameSupportTracker(tk.Tk):
                         t("status_fetching_releases", tab=tab_name, idx=idx+1, total=total, game=game_name))
                     repo = extract_github_repo(
                         game_data.get("notes", ""),
-                        game_data.get("apworld", ""))
+                        game_data.get("apworld", ""),
+                        game_data.get("links"),
+                    )
                     if not repo:
                         if game_name in old_tab_rels:
                             new_tab_rels[game_name] = old_tab_rels[game_name]

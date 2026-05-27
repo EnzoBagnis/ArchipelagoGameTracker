@@ -332,6 +332,21 @@ def refresh_table(tree, app):
             continue
         status   = data.get("status", "")
         notes    = data.get("notes",  "")
+        links    = data.get("links",  [])
+        # Build a searchable + displayable summary for the "notes" column
+        # New format: show link labels (e.g. "GitHub Releases • Setup Guide • Tracker")
+        # Legacy format (no links list): fall back to notes text
+        if links:
+            link_summary = " • ".join(
+                lk["label"] for lk in links if lk.get("label")
+            )
+            display_notes = link_summary
+            # Also include notes text in search but don't clutter display
+            search_notes  = (link_summary + " " + notes).lower()
+        else:
+            display_notes = notes
+            search_notes  = notes.lower()
+
         has_pt   = match_poptracker(name, app._poptracker_set)
         # Owned = Steam OR Playnite OR manual
         is_owned = (is_owned_on_steam(name, app._steam_owned,
@@ -343,7 +358,7 @@ def refresh_table(tree, app):
 
         if query and query not in name.lower() \
                  and query not in status.lower() \
-                 and query not in notes.lower():
+                 and query not in search_notes:
             continue
         if sf != "All":
             if sf == "Core Verified":
@@ -356,7 +371,7 @@ def refresh_table(tree, app):
         if owned_filt == t("filter_owned_yes") and not is_owned: continue
         if owned_filt == t("filter_owned_no")  and is_owned:     continue
 
-        filtered.append((name, data, has_pt, is_owned, src))
+        filtered.append((name, data, has_pt, is_owned, src, display_notes))
 
     if app._sort_col is not None:
         filtered.sort(key=lambda x: sort_key(x, app._sort_col),
@@ -364,9 +379,8 @@ def refresh_table(tree, app):
     else:
         filtered.sort(key=lambda x: x[0].lower())
 
-    for idx, (name, data, has_pt, is_owned, src) in enumerate(filtered):
+    for idx, (name, data, has_pt, is_owned, src, display_notes) in enumerate(filtered):
         status    = data.get("status", "")
-        notes     = data.get("notes",  "")
         pt_txt    = yes_txt if has_pt   else no_txt
 
         if edit_mode:
@@ -385,7 +399,7 @@ def refresh_table(tree, app):
         stripe = "even_row" if idx % 2 == 0 else "odd_row"
         tags   = [stripe, row_tag] + (["new"] if name in new_names else [])
         tree.insert("", "end",
-                    values=(name, display_status, pt_txt, notes, owned_txt),
+                    values=(name, display_status, pt_txt, display_notes, owned_txt),
                     tags=tags)
 
     app._count_lbl.config(text=t("count_label", n=len(filtered)))

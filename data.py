@@ -11,46 +11,340 @@ from config import (
 
 URL_PATTERN = re.compile(r'https?://\S+')
 
+# ── HTML link label normalisation ─────────────────────────────────────────────
+# Maps the text labels used in the "Links & Downloads" column to short keys
+# that the detail panel can display clearly.
+_LINK_LABEL_MAP = {
+    # GitHub
+    "github releases":          "GitHub Releases",
+    "releases":                 "GitHub Releases",
+    "github release":           "GitHub Releases",
+    # APWorld / Client
+    "apworld":                  "APWorld",
+    "ap world":                 "APWorld",
+    "client":                   "Client",
+    "client mod":               "Client Mod",
+    "client (gh)":              "Client (GH)",
+    "client (thunderstore)":    "Client (Thunderstore)",
+    "client (web)":             "Client (Web)",
+    "must be compiled":         "Client",
+    # Guides / info
+    "setup guide":              "Setup Guide",
+    "setup instructions":       "Setup Instructions",
+    "game info":                "Game Info",
+    "game details":             "Game Details",
+    "documentation":            "Documentation",
+    "docs":                     "Docs",
+    "extensive docs":           "Docs",
+    "faq":                      "FAQ",
+    "guide / docs":             "Guide / Docs",
+    "known bugs":               "Known Bugs",
+    "options page":             "Options Page",
+    # Trackers
+    "poptracker":               "PopTracker",
+    "tracker":                  "Tracker",
+    "universal tracker":        "Universal Tracker",
+    # Storefronts / release hosts
+    "itch.io releases":         "Itch.io",
+    "discord releases":         "Discord",
+    "discord thread":           "Discord Thread",
+    "discord channel":          "Discord",
+    "gitlab releases":          "GitLab Releases",
+    # Misc
+    "core pr":                  "Core PR",
+    "source code":              "Source Code",
+    "web client":               "Web Client",
+    "play on web":              "Play on Web",
+    "mod":                      "Mod",
+    "beta testing discord":     "Beta Testing",
+    "live split mod":           "LiveSplit Mod",
+    "releases + setup instructions": "Releases + Setup",
+    "discord releases, core pr":     "Discord / Core PR",
+    "game (free via gog)":      "Game (Free - GOG)",
+    "dev branch":               "Dev Branch",
+}
 
-# ── Sheet ──────────────────────────────────────────────────────────────────────
+
+def _normalise_link_label(raw: str) -> str:
+    """Return a cleaned display label for a hyperlink's anchor text."""
+    key = raw.strip().lower()
+    return _LINK_LABEL_MAP.get(key, raw.strip())
+
+
+# ── Sheet fetching ─────────────────────────────────────────────────────────────
 
 def fetch_tab(tab_name, gid):
-    url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv&gid={gid}"
-    r = requests.get(url, timeout=15)
+    """
+    Fetch a sheet tab as CSV rows (no hyperlinks preserved).
+    Returns list of string lists, used as fallback only.
+    """
+    url = (f"https://docs.google.com/spreadsheets/d/{SHEET_ID}"
+           f"/export?format=csv&gid={gid}")
+    try:
+        r = requests.get(url, timeout=15,
+                         headers={"User-Agent": "GameSupportTracker/1.0"})
+    except Exception:
+        return []
     if r.status_code != 200:
         return []
     return list(csv.reader(io.StringIO(r.content.decode("utf-8"))))
 
 
-def rows_to_dict(rows, tab_name=""):
-    """Parse raw CSV rows into {name: {status, notes, apworld}} dict."""
-    if not rows:
-        return {}
+def fetch_tab_with_links(tab_name, gid):
+    """
+    Fetch a sheet tab via its HTML export, which preserves <a href> hyperlinks
+    in the "Links & Downloads" column.
 
-    # Playable Worlds : A=Game(0)  B=Status(1)  C=APWorld(2)  D=Notes(3)
-    # Core Verified   : A=Game(0)  B=Notes(1)   (no APWorld column)
-    if tab_name == "Core Verified":
-        idx_name, idx_status, idx_apworld, idx_notes = 0, -1, -1, 1
-    else:
-        idx_name, idx_status, idx_apworld, idx_notes = 0, 1, 2, 3
+    Returns a list of row-dicts:
+      {
+        "name":   str,
+        "status": str,
+        "pr":     str,
+        "links":  [{"label": str, "url": str}, ...],
+        "mature": bool,
+        "notes":  str,
+      }
 
-    result = {}
+    Falls back to the CSV path (no links) if the HTML fetch/parse fails.
+    """
+    try:
+        from html.parser import HTMLParser
+
+        url = (f"https://docs.google.com/spreadsheets/d/{SHEET_ID}"
+               f"/export?format=html&gid={gid}")
+        r = requests.get(url, timeout=20,
+                         headers={"User-Agent": "GameSupportTracker/1.0"})
+        if r.status_code != 200:
+            raise RuntimeError(f"HTTP {r.status_code}")
+
+        html_text = r.content.decode("utf-8", errors="replace")
+
+        # ── Minimal HTML-table parser ────────────────────────────────────────
+        class _TableParser(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self.rows:      list[list]  = []
+                self._cur_row:  list        = []
+                self._cur_cell: list        = []   # list of (text, url) pairs
+                self._in_td    = False
+                self._cur_href = None
+                self._cur_text = []
+
+            def handle_starttag(self, tag, attrs):
+                attrs = dict(attrs)
+                if tag in ("tr",):
+                    self._cur_row  = []
+                elif tag in ("td", "th"):
+                    self._in_td    = True
+                    self._cur_cell = []
+                    self._cur_href = None
+                    self._cur_text = []
+                elif tag == "a" and self._in_td:
+                    self._cur_href = attrs.get("href", "")
+                    self._cur_text = []
+
+            def handle_endtag(self, tag):
+                if tag == "a" and self._in_td and self._cur_href is not None:
+                    text = "".join(self._cur_text).strip()
+                    self._cur_cell.append((text, self._cur_href))
+                    self._cur_href = None
+                    self._cur_text = []
+                elif tag in ("td", "th") and self._in_td:
+                    # Flush any remaining plain text as (text, "")
+                    remaining = "".join(self._cur_text).strip()
+                    if remaining:
+                        self._cur_cell.append((remaining, ""))
+                    self._cur_row.append(self._cur_cell)
+                    self._in_td    = False
+                    self._cur_cell = []
+                    self._cur_text = []
+                    self._cur_href = None
+                elif tag == "tr":
+                    if self._cur_row:
+                        self.rows.append(self._cur_row)
+                    self._cur_row = []
+
+            def handle_data(self, data):
+                if self._in_td:
+                    self._cur_text.append(data)
+
+        parser = _TableParser()
+        parser.feed(html_text)
+
+        # ── Convert parsed rows to dicts ─────────────────────────────────────
+        # New sheet structure (Playable Worlds):
+        #   col 0: Game name
+        #   col 1: Stability   (Stable / Unstable / Broken on Main / …)
+        #   col 2: PR Status   (--, In Review, Merged, Not PRing)
+        #   col 3: Links & Downloads  ← multi-hyperlink cell
+        #   col 4: 18+ / Unrated      (TRUE / FALSE)
+        #   col 5: Notes
+        #
+        # Core Verified:
+        #   col 0: Game name
+        #   col 1: Game Page link
+        #   col 2: Setup Guide link
+        #   col 3: Discord Channel link
+
+        is_core = (tab_name == "Core Verified")
+        result_rows = []
+
+        for raw_row in parser.rows:
+            def _cell_text(i):
+                """Plain text of cell i."""
+                if i >= len(raw_row):
+                    return ""
+                return " ".join(t for t, _ in raw_row[i]).strip()
+
+            def _cell_links(i):
+                """List of {label, url} for cell i (only pairs with a URL)."""
+                if i >= len(raw_row):
+                    return []
+                return [
+                    {"label": _normalise_link_label(t), "url": u}
+                    for t, u in raw_row[i]
+                    if u and t.strip()
+                ]
+
+            name = _cell_text(0)
+            if not name or name in SKIP_NAMES or len(name) > 120:
+                continue
+
+            if is_core:
+                # Core Verified — links scattered across cols 1-3
+                links = (
+                    _cell_links(1) + _cell_links(2) + _cell_links(3)
+                )
+                result_rows.append({
+                    "name":   name,
+                    "status": "Core Verified",
+                    "pr":     "",
+                    "links":  links,
+                    "mature": False,
+                    "notes":  "",
+                })
+            else:
+                status = _cell_text(1)
+                if status.lower() in ("status", "game", "do not sort",
+                                      "stability", ""):
+                    continue
+                pr     = _cell_text(2)
+                links  = _cell_links(3)
+                mature_raw = _cell_text(4).strip().upper()
+                mature = mature_raw in ("TRUE", "YES", "1")
+                notes  = _cell_text(5)
+                result_rows.append({
+                    "name":   name,
+                    "status": status,
+                    "pr":     pr,
+                    "links":  links,
+                    "mature": mature,
+                    "notes":  notes,
+                })
+
+        return result_rows
+
+    except Exception:
+        # ── Fallback: CSV path (no links) ────────────────────────────────────
+        csv_rows = fetch_tab(tab_name, gid)
+        return _csv_rows_to_dicts(csv_rows, tab_name)
+
+
+def _csv_rows_to_dicts(rows, tab_name):
+    """
+    Convert raw CSV rows (no hyperlinks) to the same row-dict format as
+    fetch_tab_with_links(), but with empty link lists.
+    New sheet structure: A=Game B=Stability C=PR D=LinksText E=18+ F=Notes
+    """
+    is_core = (tab_name == "Core Verified")
+    result  = []
     for row in rows:
-        if len(row) <= idx_name:
+        if not row:
             continue
-        name = row[idx_name].strip()
-        if not name or name in SKIP_NAMES or len(name) > 80:
+        name = row[0].strip() if row else ""
+        if not name or name in SKIP_NAMES or len(name) > 120:
             continue
 
         def _get(i):
-            return row[i].strip() if i != -1 and i < len(row) else ""
+            return row[i].strip() if i < len(row) else ""
 
-        status  = _get(idx_status)
-        apworld = _get(idx_apworld)
-        notes   = _get(idx_notes)
+        if is_core:
+            result.append({
+                "name":   name,
+                "status": "Core Verified",
+                "pr":     "",
+                "links":  [],
+                "mature": False,
+                "notes":  "",
+            })
+        else:
+            status = _get(1)
+            if status.lower() in ("status", "game", "do not sort",
+                                  "stability", ""):
+                continue
+            # col 2 = PR status, col 3 = links text, col 4 = mature, col 5 = notes
+            pr     = _get(2)
+            links_text = _get(3)
+            mature = _get(4).strip().upper() in ("TRUE", "YES", "1")
+            notes  = _get(5)
+            # Best effort: extract any raw URLs from the links text column
+            links = [{"label": u, "url": u} for u in URL_PATTERN.findall(links_text)]
+            result.append({
+                "name":   name,
+                "status": status,
+                "pr":     pr,
+                "links":  links,
+                "mature": mature,
+                "notes":  notes,
+            })
+    return result
 
-        if status.lower() in ("status", "game", "do not sort"):
+
+def rows_to_dict(rows, tab_name=""):
+    """
+    Convert raw CSV rows (old format) into the legacy
+    {name: {status, notes, apworld}} dict used by _do_check.
+
+    New sheet column layout (Playable Worlds):
+      A(0)=Game  B(1)=Stability  C(2)=PR Status  D(3)=Links  E(4)=18+  F(5)=Notes
+
+    Core Verified:
+      A(0)=Game  B(1)=Game Page  C(2)=Setup Guide  D(3)=Discord
+
+    The 'apworld' key is derived from the first link URL found in col D.
+    """
+    if not rows:
+        return {}
+
+    is_core = (tab_name == "Core Verified")
+    result  = {}
+
+    for row in rows:
+        if not row:
             continue
+        name = row[0].strip()
+        if not name or name in SKIP_NAMES or len(name) > 120:
+            continue
+
+        def _get(i):
+            return row[i].strip() if i < len(row) else ""
+
+        if is_core:
+            status  = "Core Verified"
+            apworld = ""
+            notes   = ""
+        else:
+            status = _get(1)
+            if status.lower() in ("status", "game", "do not sort",
+                                  "stability", ""):
+                continue
+            # col 3 = links text cell (plain text from CSV — no real URLs)
+            # col 5 = notes
+            links_text = _get(3)
+            notes      = _get(5)
+            # Try to pick up any raw URL accidentally present in the links column
+            found_urls = URL_PATTERN.findall(links_text)
+            apworld    = found_urls[0] if found_urls else ""
 
         result[name] = {"status": status, "notes": notes, "apworld": apworld}
     return result
@@ -62,8 +356,34 @@ def extract_urls(text):
     return URL_PATTERN.findall(text)
 
 
-def extract_github_repo(notes, apworld=""):
-    """Return (owner, repo) from the first valid GitHub URL found, or None."""
+def extract_github_repo(notes, apworld="", links=None):
+    """
+    Return (owner, repo) from the first valid GitHub URL found, or None.
+
+    Accepts:
+      notes   – plain-text notes string (old + new format)
+      apworld – legacy apworld URL string
+      links   – list of {"label": str, "url": str} dicts (new format)
+    """
+    # 1. Prefer the structured links list (new sheet format)
+    if links:
+        for link in links:
+            url = link.get("url", "")
+            if not url:
+                continue
+            m = GITHUB_REPO_RE.search(url)
+            if m:
+                owner = m.group(1)
+                repo  = m.group(2)
+                if repo.endswith(".git"):
+                    repo = repo[:-4]
+                from urllib.parse import urlparse
+                parsed = urlparse(url)
+                if "/pull/" in parsed.path:
+                    continue
+                return owner, repo
+
+    # 2. Fallback: scan free-text fields (legacy / CSV fallback)
     for text in (apworld, notes):
         if not text:
             continue

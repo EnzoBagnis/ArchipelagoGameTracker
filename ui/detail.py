@@ -90,7 +90,7 @@ def _set_sel_label(widget, text, fg=None):
     widget.config(state="disabled")
 
 
-def update_detail(widgets, name, status, notes, tab, releases, poptracker_set, apworld=""):
+def update_detail(widgets, name, status, notes, tab, releases, poptracker_set, apworld="", links=None):
     """Populate the detail panel for the selected game."""
     w = widgets
 
@@ -128,52 +128,75 @@ def update_detail(widgets, name, status, notes, tab, releases, poptracker_set, a
         w["release"].config(text="—", fg=TEXT_DIM,
                             font=("Courier New", 9), cursor="")
 
-    # APWorld / Client links + Notes links
-    apworld_links, apworld_plain = _parse_notes(apworld)
-    labeled_links, plain_text = _parse_notes(notes)
-
-    # Combine plain text
-    all_plain = []
-    if apworld_plain:
-        all_plain.append(apworld_plain)
-    if plain_text:
-        all_plain.append(plain_text)
-    _set_sel_label(w["notes"], " • ".join(all_plain) if all_plain else "")
-
+    # ── Links ─────────────────────────────────────────────────────────────────
+    # Priority: structured links list (new sheet format) > legacy apworld field
     for child in w["links"].winfo_children():
         child.destroy()
 
-    # Show APWorld/Client links first
-    for label, url in apworld_links:
-        row = tk.Frame(w["links"], bg=BG2)
-        row.pack(anchor="w", pady=1)
-        lbl_text = label if label else "APWorld/Client:"
-        tk.Label(row, text=lbl_text, bg=BG2, fg=TEXT_DIM,
-                 font=("Courier New", 9), width=16, anchor="w").pack(side="left")
-        short = _short_url(url)
-        lnk = tk.Label(row, text=short, bg=BG2, fg=ACCENT2,
-                       font=("Courier New", 9, "underline"),
-                       cursor="hand2", anchor="w")
-        lnk.pack(side="left")
-        lnk.bind("<Button-1>", lambda e, u=url: webbrowser.open(u))
-        lnk.bind("<Enter>",    lambda e, l=lnk: l.config(fg="#c084fc"))
-        lnk.bind("<Leave>",    lambda e, l=lnk: l.config(fg=ACCENT2))
+    if links:
+        # New format: render each {label, url} pair directly
+        for link in links:
+            label_txt = link.get("label", "").strip()
+            url       = link.get("url", "").strip()
+            if not url:
+                continue
+            row = tk.Frame(w["links"], bg=BG2)
+            row.pack(anchor="w", pady=1)
+            tk.Label(row, text=label_txt if label_txt else "🔗",
+                     bg=BG2, fg=TEXT_DIM,
+                     font=("Courier New", 9), width=20, anchor="w").pack(side="left")
+            short = _short_url(url)
+            lnk = tk.Label(row, text=short, bg=BG2, fg=ACCENT2,
+                           font=("Courier New", 9, "underline"),
+                           cursor="hand2", anchor="w")
+            lnk.pack(side="left")
+            lnk.bind("<Button-1>", lambda e, u=url: webbrowser.open(u))
+            lnk.bind("<Enter>",    lambda e, l=lnk: l.config(fg="#c084fc"))
+            lnk.bind("<Leave>",    lambda e, l=lnk: l.config(fg=ACCENT2))
 
-    # Then Notes links
-    for label, url in labeled_links:
-        row = tk.Frame(w["links"], bg=BG2)
-        row.pack(anchor="w", pady=1)
-        lbl_text = label if label else "🔗"
-        tk.Label(row, text=lbl_text, bg=BG2, fg=TEXT_DIM,
-                 font=("Courier New", 9), width=16, anchor="w").pack(side="left")
-        short = _short_url(url)
-        lnk = tk.Label(row, text=short, bg=BG2, fg=ACCENT2,
-                       font=("Courier New", 9, "underline"),
-                       cursor="hand2", anchor="w")
-        lnk.pack(side="left")
-        lnk.bind("<Button-1>", lambda e, u=url: webbrowser.open(u))
-        lnk.bind("<Enter>",    lambda e, l=lnk: l.config(fg="#c084fc"))
-        lnk.bind("<Leave>",    lambda e, l=lnk: l.config(fg=ACCENT2))
+        # Notes plain text (no links to extract — they're already in `links`)
+        _set_sel_label(w["notes"], notes if notes else "")
+    else:
+        # Legacy format: parse apworld + notes for URLs
+        apworld_links, apworld_plain = _parse_notes(apworld)
+        labeled_links, plain_text    = _parse_notes(notes)
+
+        all_plain = []
+        if apworld_plain:
+            all_plain.append(apworld_plain)
+        if plain_text:
+            all_plain.append(plain_text)
+        _set_sel_label(w["notes"], " • ".join(all_plain) if all_plain else "")
+
+        for label, url in apworld_links:
+            row = tk.Frame(w["links"], bg=BG2)
+            row.pack(anchor="w", pady=1)
+            lbl_text = label if label else "APWorld/Client:"
+            tk.Label(row, text=lbl_text, bg=BG2, fg=TEXT_DIM,
+                     font=("Courier New", 9), width=16, anchor="w").pack(side="left")
+            short = _short_url(url)
+            lnk = tk.Label(row, text=short, bg=BG2, fg=ACCENT2,
+                           font=("Courier New", 9, "underline"),
+                           cursor="hand2", anchor="w")
+            lnk.pack(side="left")
+            lnk.bind("<Button-1>", lambda e, u=url: webbrowser.open(u))
+            lnk.bind("<Enter>",    lambda e, l=lnk: l.config(fg="#c084fc"))
+            lnk.bind("<Leave>",    lambda e, l=lnk: l.config(fg=ACCENT2))
+
+        for label, url in labeled_links:
+            row = tk.Frame(w["links"], bg=BG2)
+            row.pack(anchor="w", pady=1)
+            lbl_text = label if label else "🔗"
+            tk.Label(row, text=lbl_text, bg=BG2, fg=TEXT_DIM,
+                     font=("Courier New", 9), width=16, anchor="w").pack(side="left")
+            short = _short_url(url)
+            lnk = tk.Label(row, text=short, bg=BG2, fg=ACCENT2,
+                           font=("Courier New", 9, "underline"),
+                           cursor="hand2", anchor="w")
+            lnk.pack(side="left")
+            lnk.bind("<Button-1>", lambda e, u=url: webbrowser.open(u))
+            lnk.bind("<Enter>",    lambda e, l=lnk: l.config(fg="#c084fc"))
+            lnk.bind("<Leave>",    lambda e, l=lnk: l.config(fg=ACCENT2))
 
 
 def _parse_notes(notes):
