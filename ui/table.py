@@ -3,7 +3,7 @@ from tkinter import ttk
 
 from config import (
     TABS, STATUS_COLORS, STATUS_ORDER, SORT_ICONS,
-    BG, BG3, ACCENT, ACCENT2, TEXT, TEXT_DIM, BORDER, GREEN, RED
+    BG, BG3, ACCENT, ACCENT2, TEXT, TEXT_DIM, BORDER, GREEN
 )
 from data import match_poptracker, is_owned_on_steam, is_owned_on_playnite
 from lang.l18n import t
@@ -163,8 +163,7 @@ def build_tree(parent, app):
         tree.tag_configure(status, foreground=color)
     tree.tag_configure("Other",    foreground=TEXT_DIM)
     tree.tag_configure("new",      background="#1a2e1a")
-    tree.tag_configure("core_yes", foreground=GREEN)
-    tree.tag_configure("core_no",  foreground=RED)
+    tree.tag_configure("core", foreground=GREEN)
     tree.tag_configure("odd_row",  background="#0d1117")
     tree.tag_configure("even_row", background="#161b22")
 
@@ -376,7 +375,7 @@ def refresh_table(tree, app):
 
         row_is_core = (tab == "Core Verified") or (is_all and src == "Core Verified" and not status)
         if row_is_core:
-            row_tag = "core_yes" if has_pt else "core_no"
+            row_tag = "core"
             display_status = "Core Verified" if is_all else status
         else:
             row_tag = status if status in STATUS_COLORS else "Other"
